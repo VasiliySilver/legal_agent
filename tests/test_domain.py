@@ -30,9 +30,10 @@ def test_article_validation_empty_number():
 def test_legal_query_creation():
     from src.domain.entities import LegalQuery
     
-    query = LegalQuery(text="Сколько дней отпуска?", user_id="user123")
+    query = LegalQuery(question="Сколько дней отпуска?", user_id="user123")
     
-    assert query.text == "Сколько дней отпуска?"
+    assert query.question == "Сколько дней отпуска?"
+    assert query.text == "Сколько дней отпуска?"  # test property alias
     assert query.user_id == "user123"
     assert isinstance(query.timestamp, datetime)
 
@@ -42,7 +43,7 @@ def test_legal_query_validation_too_short():
     from pydantic import ValidationError
     
     with pytest.raises(ValidationError):
-        LegalQuery(text="да", user_id="user123")
+        LegalQuery(question="да", user_id="user123")
 
 
 def test_legal_answer_creation():
@@ -50,13 +51,15 @@ def test_legal_answer_creation():
     
     article = Article(number="115", title="Отпуск", content="28 дней", chapter="Глава 19")
     answer = LegalAnswer(
-        text="Ответ агента",
-        sources=[article],
+        answer="Ответ агента",
+        sources=[115],  # List of article numbers, not Article objects
         confidence=0.95
     )
     
-    assert answer.text == "Ответ агента"
+    assert answer.answer == "Ответ агента"
+    assert answer.text == "Ответ агента"  # test property alias
     assert len(answer.sources) == 1
+    assert answer.sources[0] == 115
     assert answer.confidence == 0.95
 
 
@@ -73,8 +76,8 @@ def test_legal_conversation_add_message():
     from src.domain.entities import LegalConversation, LegalQuery, LegalAnswer
     
     conv = LegalConversation(user_id="user123")
-    query = LegalQuery(text="Вопрос", user_id="user123")
-    answer = LegalAnswer(text="Ответ", sources=[], confidence=0.9)
+    query = LegalQuery(question="Вопрос", user_id="user123")
+    answer = LegalAnswer(answer="Ответ", sources=[], confidence=0.9)
     
     conv.add_query(query)
     conv.add_answer(answer)
