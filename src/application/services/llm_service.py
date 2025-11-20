@@ -177,11 +177,19 @@ class LLMService:
             Список номеров статей
         """
         # Ищем паттерны типа "статья 80", "статье 77", "статьи 80"
-        pattern = r"стать[иеюя]\s+(\d+)"
+        # Также ловим "статьям 80 и 77" (где 77 идёт после "и")
+        pattern = r"стать[иеюя][мх]?\s+(\d+(?:\s+и\s+\d+)*)"
         matches = re.findall(pattern, text, re.IGNORECASE)
+        
+        # Извлекаем все числа из найденных совпадений
+        numbers = []
+        for match in matches:
+            # Извлекаем все числа из каждого совпадения
+            nums = re.findall(r"\d+", match)
+            numbers.extend(int(num) for num in nums)
 
-        # Удаляем дубликаты и преобразуем в int
-        return sorted(list(set(int(num) for num in matches)))
+        # Удаляем дубликаты и сортируем
+        return sorted(list(set(numbers)))
 
     def _calculate_confidence(
         self, articles: list[Article], sources: list[int]
@@ -216,6 +224,15 @@ def extract_article_numbers(text: str) -> list[int]:
     Returns:
         Список номеров статей
     """
-    pattern = r"стать[иеюя]\s+(\d+)"
+    pattern = r"стать[иеюя][мх]?\s+(\d+(?:\s+и\s+\d+)*)"
     matches = re.findall(pattern, text, re.IGNORECASE)
-    return sorted(list(set(int(num) for num in matches)))
+    
+    # Извлекаем все числа из найденных совпадений
+    numbers = []
+    for match in matches:
+        # Извлекаем все числа из каждого совпадения
+        nums = re.findall(r"\d+", match)
+        numbers.extend(int(num) for num in nums)
+
+    # Удаляем дубликаты и сортируем
+    return sorted(list(set(numbers)))
