@@ -4,7 +4,7 @@
 version: '3.8'
 
 services:
-  # PostgreSQL база данных
+  # PostgreSQL для основных данных (статьи, диалоги, пользователи)
   postgres:
     image: postgres:16-alpine
     container_name: legal_agent_postgres
@@ -24,41 +24,66 @@ services:
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=ru_RU.UTF-8"
     
     ports:
-      # Проброс порта на хост (для подключения из приложения)
+      # Проброс порта на хост
       - "${POSTGRES_PORT:-5432}:5432"
     
     volumes:
       # Персистентное хранилище данных
       - postgres_data:/var/lib/postgresql/data
       
-      # Инициализационные скрипты (выполняются при первом запуске)
+      # Инициализационные скрипты
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     
     networks:
       - legal_agent_network
     
     healthcheck:
-      # Проверка здоровья БД
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # PostgreSQL с pgvector для векторного поиска
+  postgres_vector:
+    image: pgvector/pgvector:pg16
+    container_name: legal_agent_postgres_vector
+    restart: unless-stopped
     
-    # Настройки ресурсов (опционально, для production)
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '2'
-    #       memory: 2G
-    #     reservations:
-    #       cpus: '1'
-    #       memory: 512M
+    environment:
+      POSTGRES_USER: ${VECTOR_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${VECTOR_DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${VECTOR_DB_NAME:-legal_agent_vectors}
+      
+      LANG: ru_RU.UTF-8
+      LC_ALL: ru_RU.UTF-8
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=ru_RU.UTF-8"
+    
+    ports:
+      # Отдельный порт для векторной БД
+      - "${VECTOR_DB_PORT:-5433}:5432"
+    
+    volumes:
+      - postgres_vector_data:/var/lib/postgresql/data
+      - ./init_vector.sql:/docker-entrypoint-initdb.d/init_vector.sql
+    
+    networks:
+      - legal_agent_network
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${VECTOR_DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 # Volumes для персистентного хранения данных
 volumes:
   postgres_data:
     driver: local
     name: legal_agent_postgres_data
+  
+  postgres_vector_data:
+    driver: local
+    name: legal_agent_postgres_vector_data
 
 # Сеть для коммуникации между контейнерами
 networks:
