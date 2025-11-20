@@ -25,8 +25,8 @@ cd docker
 docker-compose down -v
 docker-compose up -d
 
-# 2. Проверить расширение
-docker exec -it legal_agent_postgres psql -U postgres -d legal_agent -c "SELECT extname, extversion FROM pg_extension WHERE extname = 'vector';"
+# 2. Проверить расширение в векторной БД
+docker exec -it legal_agent_postgres_vector psql -U postgres -d legal_agent_vectors -c "SELECT extname, extversion FROM pg_extension WHERE extname = 'vector';"
 
 # 3. Инициализировать таблицы
 cd ..
@@ -47,7 +47,12 @@ await service.build_index(articles)
 ```python
 service = VectorService(
     backend=VectorBackend.POSTGRES,
-    connection_string="postgresql://postgres:postgres@localhost:5432/legal_agent"
+    connection_string="postgresql://postgres:postgres@localhost:5433/legal_agent_vectors"
+)
+await service.build_index(articles)
+```
+
+> **Важно**: Векторная БД работает на порту **5433**, основная БД — на **5432**
 )
 await service.build_index(articles)
 ```
@@ -115,7 +120,7 @@ docker-compose up -d
 ### Проверка расширения
 
 ```bash
-docker exec -it legal_agent_postgres psql -U postgres -d legal_agent \
+docker exec -it legal_agent_postgres_vector psql -U postgres -d legal_agent_vectors \
   -c "SELECT extname, extversion FROM pg_extension WHERE extname = 'vector';"
 ```
 
