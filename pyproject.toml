@@ -1,6 +1,6 @@
 [project]
 name = "legal_agent"
-version = "0.1.0"
+version = "1.0.0"
 description = "A short description of my project."
 authors = [{ name = "Your Name", email = "your.email@example.com" }]
 requires-python = ">=3.12" # <-- ИСПРАВЛЕНО: используем ~ вместо ~
@@ -54,6 +54,12 @@ line_length = 88
 
 [tool.commitizen]
 name = "cz_conventional_commits"
+version = "1.0.0"
+version_files = [
+    "pyproject.toml:version"
+]
+tag_format = "v$version"
+update_changelog_on_bump = true
 
 [dependency-groups]
 dev = [
