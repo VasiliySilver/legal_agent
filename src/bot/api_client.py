@@ -79,7 +79,12 @@ class LegalAgentAPIClient:
                 f"{self.base_url}/answer",
                 json=payload,
             ) as response:
-                response.raise_for_status()
+                # Проверяем статус код
+                if response.status >= 400:
+                    error_text = await response.text()
+                    logger.error(f"API error {response.status}: {error_text}")
+                    raise Exception(f"API error: {response.status} - {error_text}")
+                
                 result = await response.json()
                 logger.info(
                     f"Получен ответ от API для вопроса: {question[:50]}..."
@@ -91,8 +96,10 @@ class LegalAgentAPIClient:
             raise Exception(f"Ошибка сети при обращении к API: {e}")
 
         except Exception as e:
-            logger.error(f"API error: {e}")
-            raise Exception(f"Ошибка API: {e}")
+            if "API error" not in str(e):
+                logger.error(f"Unexpected error: {e}")
+                raise Exception(f"Ошибка API: {e}")
+            raise
 
     async def search_articles(
         self,
@@ -119,7 +126,11 @@ class LegalAgentAPIClient:
                 f"{self.base_url}/articles/search",
                 params={"query": query, "limit": limit},
             ) as response:
-                response.raise_for_status()
+                if response.status >= 400:
+                    error_text = await response.text()
+                    logger.error(f"API error {response.status}: {error_text}")
+                    raise Exception(f"API error: {response.status}")
+                
                 result = await response.json()
                 logger.info(f"Найдено статей: {len(result.get('articles', []))}")
                 return result
@@ -129,8 +140,10 @@ class LegalAgentAPIClient:
             raise Exception(f"Ошибка сети при поиске: {e}")
 
         except Exception as e:
-            logger.error(f"API error при поиске: {e}")
-            raise Exception(f"Ошибка поиска: {e}")
+            if "API error" not in str(e):
+                logger.error(f"Unexpected error при поиске: {e}")
+                raise Exception(f"Ошибка поиска: {e}")
+            raise
 
     async def get_conversation_history(
         self,
@@ -154,7 +167,11 @@ class LegalAgentAPIClient:
             async with self._session.get(
                 f"{self.base_url}/conversations/{conversation_id}",
             ) as response:
-                response.raise_for_status()
+                if response.status >= 400:
+                    error_text = await response.text()
+                    logger.error(f"API error {response.status}: {error_text}")
+                    raise Exception(f"API error: {response.status}")
+                
                 result = await response.json()
                 logger.info(f"Получена история диалога: {conversation_id}")
                 return result
@@ -164,8 +181,10 @@ class LegalAgentAPIClient:
             raise Exception(f"Ошибка сети: {e}")
 
         except Exception as e:
-            logger.error(f"API error при получении истории: {e}")
-            raise Exception(f"Ошибка получения истории: {e}")
+            if "API error" not in str(e):
+                logger.error(f"Unexpected error при получении истории: {e}")
+                raise Exception(f"Ошибка получения истории: {e}")
+            raise
 
     async def create_conversation(
         self,
@@ -190,7 +209,11 @@ class LegalAgentAPIClient:
                 f"{self.base_url}/conversations",
                 json={"user_id": user_id},
             ) as response:
-                response.raise_for_status()
+                if response.status >= 400:
+                    error_text = await response.text()
+                    logger.error(f"API error {response.status}: {error_text}")
+                    raise Exception(f"API error: {response.status}")
+                
                 result = await response.json()
                 logger.info(f"Создан новый диалог для пользователя: {user_id}")
                 return result
@@ -200,5 +223,7 @@ class LegalAgentAPIClient:
             raise Exception(f"Ошибка сети: {e}")
 
         except Exception as e:
-            logger.error(f"API error при создании диалога: {e}")
-            raise Exception(f"Ошибка создания диалога: {e}")
+            if "API error" not in str(e):
+                logger.error(f"Unexpected error при создании диалога: {e}")
+                raise Exception(f"Ошибка создания диалога: {e}")
+            raise

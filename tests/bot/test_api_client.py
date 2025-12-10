@@ -86,18 +86,16 @@ async def test_ask_question_api_error(api_client):
     """Тест: обработка ошибки API."""
     with patch("aiohttp.ClientSession.post") as mock_post:
         mock_post.return_value.__aenter__.return_value.status = 500
-        mock_post.return_value.__aenter__.return_value.raise_for_status.side_effect = (
-            ClientResponseError(
-                request_info=None,
-                history=None,
-                status=500,
-            )
+        mock_post.return_value.__aenter__.return_value.text = AsyncMock(
+            return_value="Internal Server Error"
         )
 
         with pytest.raises(Exception) as exc_info:
             await api_client.ask_question("Тест")
 
-        assert "API error" in str(exc_info.value).lower()
+        # Проверяем что ошибка содержит "API error" или "api error"
+        error_message = str(exc_info.value).lower()
+        assert "api error" in error_message
 
 
 @pytest.mark.asyncio
