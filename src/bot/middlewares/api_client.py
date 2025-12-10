@@ -7,7 +7,7 @@ import logging
 from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
-from aiogram.types import TelegramObject
+from aiogram.types import Update
 
 from src.bot.api_client import LegalAgentAPIClient
 
@@ -32,8 +32,8 @@ class ApiClientMiddleware(BaseMiddleware):
 
     async def __call__(
         self,
-        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
-        event: TelegramObject,
+        handler: Callable[[Update, dict[str, Any]], Awaitable[Any]],
+        event: Update,
         data: dict[str, Any],
     ) -> Any:
         """

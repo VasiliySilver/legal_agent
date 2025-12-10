@@ -9,7 +9,7 @@ from collections import defaultdict
 from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
-from aiogram.types import TelegramObject, Update
+from aiogram.types import Update
 
 logger = logging.getLogger(__name__)
 
@@ -36,18 +36,15 @@ class ThrottlingMiddleware(BaseMiddleware):
 
     async def __call__(
         self,
-        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
-        event: TelegramObject,
+        handler: Callable[[Update, dict[str, Any]], Awaitable[Any]],
+        event: Update,
         data: dict[str, Any],
     ) -> Any:
         """
         Проверка rate limit перед обработкой события.
         """
-        # Получаем update
-        update: Update = data.get("event_update")
-        
-        if not update:
-            return await handler(event, data)
+        # event это сам Update
+        update = event
         
         # Извлекаем информацию о пользователе
         user = None

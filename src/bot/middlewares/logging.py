@@ -19,18 +19,15 @@ class LoggingMiddleware(BaseMiddleware):
 
     async def __call__(
         self,
-        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
-        event: TelegramObject,
+        handler: Callable[[Update, dict[str, Any]], Awaitable[Any]],
+        event: Update,
         data: dict[str, Any],
     ) -> Any:
         """
         Обработка события с логированием.
         """
-        # Получаем update
-        update: Update = data.get("event_update")
-        
-        if not update:
-            return await handler(event, data)
+        # event это сам Update
+        update = event
         
         # Извлекаем информацию о пользователе
         user = None
