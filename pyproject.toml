@@ -1,0 +1,76 @@
+[project]
+name = "legal_agent"
+version = "1.0.0"
+description = "A short description of my project."
+authors = [{ name = "Your Name", email = "your.email@example.com" }]
+requires-python = ">=3.12" # <-- ИСПРАВЛЕНО: используем ~ вместо ~
+dependencies = [
+    "asyncpg>=0.30.0",
+    "beautifulsoup4>=4.14.2",
+    "email-validator>=2.3.0",
+    "faiss-cpu>=1.13.0",
+    "fastapi>=0.115.0",
+    "groq>=0.35.0",
+    "httpx[socks]>=0.28.1",
+    "ipython>=9.7.0",
+    "langchain>=1.0.8",
+    "langchain-community>=0.3.16",
+    "langchain-core>=0.3.29",
+    "langchain-google-genai>=3.1.0",
+    "langchain-groq>=1.0.1",
+    "langchain-huggingface>=0.1.2",
+    "langchain-text-splitters>=0.3.5",
+    "pandas>=2.3.3",
+    "playwright>=1.56.0",
+    "pproxy>=2.7.9",
+    "proxy-py>=2.4.10",
+    "pydantic>=2.0.0",
+    "pysocks>=1.7.1",
+    "python-dotenv>=1.2.1",
+    "sentence-transformers>=5.1.2",
+    "sqlalchemy>=2.0.0",
+    "uvicorn[standard]>=0.34.0",
+]
+
+[tool.uv]
+# Configuration specific to uv can go here
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+pythonpath = ["."]
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "1.0.0"
+version_files = [
+    "pyproject.toml:version"
+]
+tag_format = "v$version"
+update_changelog_on_bump = true
+
+[dependency-groups]
+dev = [
+    "aiosqlite>=0.21.0",
+    "black>=25.11.0",
+    "commitizen>=4.10.0",
+    "debugpy>=1.8.17",
+    "flake8>=7.3.0",
+    "httpx>=0.28.1",
+    "isort>=7.0.0",
+    "pytest>=9.0.1",
+    "pytest-asyncio>=1.3.0",
+    "ruff>=0.14.5",
+]
