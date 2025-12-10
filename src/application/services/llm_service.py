@@ -15,15 +15,27 @@ from src.domain.entities import Article, LegalAnswer, Message
 class LLMService:
     """Сервис для работы с LLM (Large Language Model)."""
 
-    def __init__(self, api_key: str, model: str = "llama-3.1-70b-versatile"):
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "llama-3.3-70b-versatile",
+        proxy: Optional[str] = None,
+    ):
         """
         Инициализация LLM сервиса.
 
         Args:
             api_key: API ключ для Groq
-            model: Название модели (по умолчанию llama-3.1-70b-versatile)
+            model: Название модели (по умолчанию llama-3.3-70b-versatile)
+            proxy: Прокси URL (опционально)
         """
-        self.client = AsyncGroq(api_key=api_key)
+        # Создаем клиент с поддержкой прокси если указан
+        client_kwargs = {"api_key": api_key}
+        if proxy:
+            import httpx
+            client_kwargs["http_client"] = httpx.AsyncClient(proxy=proxy)
+        
+        self.client = AsyncGroq(**client_kwargs)
         self.model = model
         self.system_prompt = self._get_system_prompt()
 
@@ -151,9 +163,14 @@ class LLMService:
             # Определяем уверенность на основе наличия статей
             confidence = self._calculate_confidence(articles, sources)
 
+            # Конвертируем номера статей в строки
+            article_numbers = [str(s) for s in sources]
+
             return LegalAnswer(
                 answer=answer_text,
-                sources=sources,
+                context=articles,  # Полные объекты статей
+                sources=sources,  # Номера статей как int (для обратной совместимости)
+                article_numbers=article_numbers,  # Номера статей как строки
                 confidence=confidence,
             )
 
@@ -162,7 +179,9 @@ class LLMService:
             print(f"Error calling LLM API: {e}")
             return LegalAnswer(
                 answer="Извините, произошла ошибка при обработке вашего запроса. Попробуйте позже.",
+                context=[],
                 sources=[],
+                article_numbers=[],
                 confidence=0.0,
             )
 

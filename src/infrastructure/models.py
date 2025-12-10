@@ -15,10 +15,11 @@ from sqlalchemy import (
     Index,
     JSON,
     Float,
+    Enum as SQLEnum,
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from src.infrastructure.database import Base
-from src.domain.entities import Article, LegalQuery, LegalAnswer, LegalConversation
+from src.domain.entities import Article, LegalQuery, LegalAnswer, LegalConversation, ArticleStatus
 
 
 # ============================================================================
@@ -45,8 +46,23 @@ class ArticleModel(Base):
     # Полный текст статьи
     content: Mapped[str] = mapped_column(Text, nullable=False)
     
-    # Глава ТК РФ
+    # Иерархическая структура ТК РФ
+    part: Mapped[str] = mapped_column(String(100), nullable=True)
+    section: Mapped[str] = mapped_column(String(200), nullable=True)
     chapter: Mapped[str] = mapped_column(String(200), nullable=True)
+    
+    # Характеристики статьи
+    text_length: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    status: Mapped[str] = mapped_column(
+        SQLEnum(ArticleStatus, name='article_status', create_constraint=True),
+        nullable=False,
+        default=ArticleStatus.ACTIVE
+    )
+    
+    # Метаинформация источника
+    source: Mapped[str] = mapped_column(String(100), nullable=True)
+    source_url: Mapped[str] = mapped_column(String(500), nullable=True)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     
     # Метаданные (для расширения)
     metadata_json: Mapped[dict] = mapped_column(JSON, nullable=True, default={})
@@ -78,7 +94,14 @@ class ArticleModel(Base):
             number=self.number,
             title=self.title,
             content=self.content,
+            part=self.part,
+            section=self.section,
             chapter=self.chapter or "",
+            text_length=self.text_length,
+            status=ArticleStatus(self.status) if isinstance(self.status, str) else self.status,
+            source=self.source,
+            source_url=self.source_url,
+            fetched_at=self.fetched_at,
         )
     
     @staticmethod
@@ -96,7 +119,14 @@ class ArticleModel(Base):
             number=entity.number,
             title=entity.title,
             content=entity.content,
+            part=entity.part,
+            section=entity.section,
             chapter=entity.chapter,
+            text_length=entity.text_length,
+            status=entity.status,
+            source=entity.source,
+            source_url=entity.source_url,
+            fetched_at=entity.fetched_at,
         )
     
     def __repr__(self) -> str:
@@ -120,6 +150,9 @@ class ConversationModel(Base):
     
     # ID пользователя (из Telegram, веб-интерфейса и т.д.)
     user_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    
+    # Название диалога
+    title: Mapped[str] = mapped_column(String(500), nullable=True)
     
     # Метаданные (настройки, контекст)
     metadata_json: Mapped[dict] = mapped_column(JSON, nullable=True, default={})
@@ -150,8 +183,11 @@ class ConversationModel(Base):
             LegalConversation: Доменная сущность диалога
         """
         conversation = LegalConversation(
+            id=self.id,
             user_id=self.user_id,
-            created_at=self.created_at,
+            title=self.title,
+            started_at=self.created_at,
+            updated_at=self.updated_at,
             metadata=self.metadata_json or {},
         )
         
@@ -175,8 +211,10 @@ class ConversationModel(Base):
         """
         return ConversationModel(
             user_id=entity.user_id,
+            title=entity.title,
             metadata_json=entity.metadata,
-            created_at=entity.created_at,
+            created_at=entity.started_at,
+            updated_at=entity.updated_at,
         )
     
     def __repr__(self) -> str:
@@ -239,7 +277,7 @@ class MessageModel(Base):
         """
         if self.role == "user":
             return LegalQuery(
-                text=self.content,
+                question=self.content,
                 user_id=self.conversation.user_id,
                 timestamp=self.created_at,
                 metadata=self.metadata_json or {},
@@ -259,7 +297,7 @@ class MessageModel(Base):
                         sources.append(article)
             
             return LegalAnswer(
-                text=self.content,
+                answer=self.content,
                 sources=sources,
                 confidence=self.confidence or 0.0,
                 timestamp=self.created_at,
@@ -283,7 +321,7 @@ class MessageModel(Base):
         return MessageModel(
             conversation_id=conversation_id,
             role="user",
-            content=query.text,
+            content=query.question,  # Используем question, а не text
             metadata_json=query.metadata,
             created_at=query.timestamp,
         )
@@ -300,9 +338,9 @@ class MessageModel(Base):
         Returns:
             MessageModel: ORM модель
         """
-        # Преобразуем sources в JSON
+        # Преобразуем context (статьи) в JSON
         sources_json = []
-        for article in answer.sources:
+        for article in answer.context:
             sources_json.append({
                 "number": article.number,
                 "title": article.title,
@@ -313,7 +351,7 @@ class MessageModel(Base):
         return MessageModel(
             conversation_id=conversation_id,
             role="assistant",
-            content=answer.text,
+            content=answer.answer,  # Используем answer, а не text
             confidence=answer.confidence,
             sources=sources_json,
             metadata_json=answer.metadata,

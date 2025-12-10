@@ -31,12 +31,12 @@ class QuickAnswerUseCase:
         self.llm_service = llm_service
         self.vector_service = vector_service
 
-    async def execute(self, question: str, top_k: int = 5) -> LegalAnswer:
+    async def execute(self, question: LegalQuery | str, top_k: int = 5) -> LegalAnswer:
         """
         Быстрый ответ на вопрос.
 
         Args:
-            question: Вопрос пользователя
+            question: Вопрос пользователя (строка или LegalQuery объект)
             top_k: Количество статей для поиска
 
         Returns:
@@ -45,11 +45,16 @@ class QuickAnswerUseCase:
         Raises:
             ValueError: Если вопрос пустой
         """
-        if not question or not question.strip():
-            raise ValueError("Вопрос не может быть пустым")
-
-        # Создаём минимальный Query объект
-        query = LegalQuery(question=question, user_id="anonymous")
+        # Если передан LegalQuery, извлекаем из него вопрос
+        if isinstance(question, LegalQuery):
+            query = question
+            question_text = question.question
+        else:
+            # Если строка - создаём LegalQuery
+            if not question or not question.strip():
+                raise ValueError("Вопрос не может быть пустым")
+            question_text = question.strip()
+            query = LegalQuery(question=question_text, user_id="anonymous")
 
         # Используем основной use case без conversation_id
         main_use_case = AnswerLegalQuestionUseCase(

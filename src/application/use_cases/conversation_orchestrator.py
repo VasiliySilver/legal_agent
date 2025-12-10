@@ -2,7 +2,7 @@ from src.application.use_cases.manage_conversation import ManageConversationUseC
 from src.domain.entities import LegalAnswer, LegalConversation, LegalQuery
 
 
-class ConversationOrchestrator:
+class ConversationOrchestratorUseCase:
     """
     Оркестратор для управления полным циклом диалога.
 
@@ -12,18 +12,18 @@ class ConversationOrchestrator:
 
     def __init__(
         self,
-        conversation_use_case: ManageConversationUseCase,
         answer_use_case,  # AnswerLegalQuestionUseCase (избегаем циклического импорта)
+        manage_conversation_use_case: ManageConversationUseCase,
     ):
         """
         Инициализация оркестратора.
 
         Args:
-            conversation_use_case: Use case управления диалогами
             answer_use_case: Use case ответа на вопросы
+            manage_conversation_use_case: Use case управления диалогами
         """
-        self.conversation_use_case = conversation_use_case
         self.answer_use_case = answer_use_case
+        self.manage_conversation_use_case = manage_conversation_use_case
 
     async def start_new_dialog(
         self,
@@ -41,7 +41,7 @@ class ConversationOrchestrator:
             Кортеж (диалог, ответ)
         """
         # Создаём новый диалог
-        conversation = await self.conversation_use_case.create_conversation(user_id)
+        conversation = await self.manage_conversation_use_case.create_conversation(user_id)
 
         # Создаём запрос
         query = LegalQuery(
@@ -50,7 +50,7 @@ class ConversationOrchestrator:
         )
 
         # Добавляем вопрос в диалог
-        await self.conversation_use_case.add_user_message(
+        await self.manage_conversation_use_case.add_user_message(
             conversation.id, query
         )
 
@@ -60,13 +60,16 @@ class ConversationOrchestrator:
             conversation_id=conversation.id,
         )
 
+        # Устанавливаем conversation_id в ответе
+        answer.conversation_id = conversation.id
+
         # Добавляем ответ в диалог
-        await self.conversation_use_case.add_assistant_message(
+        await self.manage_conversation_use_case.add_assistant_message(
             conversation.id, answer
         )
 
         # Возвращаем обновлённый диалог
-        updated_conversation = await self.conversation_use_case.get_conversation(
+        updated_conversation = await self.manage_conversation_use_case.get_conversation(
             conversation.id
         )
 
@@ -90,7 +93,7 @@ class ConversationOrchestrator:
             Кортеж (обновлённый диалог, ответ)
         """
         # Проверяем существование диалога
-        conversation = await self.conversation_use_case.get_conversation(
+        conversation = await self.manage_conversation_use_case.get_conversation(
             conversation_id
         )
 
@@ -101,7 +104,7 @@ class ConversationOrchestrator:
         )
 
         # Добавляем вопрос
-        await self.conversation_use_case.add_user_message(
+        await self.manage_conversation_use_case.add_user_message(
             conversation_id, query
         )
 
@@ -111,13 +114,16 @@ class ConversationOrchestrator:
             conversation_id=conversation_id,
         )
 
+        # Устанавливаем conversation_id в ответе
+        answer.conversation_id = conversation_id
+
         # Добавляем ответ
-        await self.conversation_use_case.add_assistant_message(
+        await self.manage_conversation_use_case.add_assistant_message(
             conversation_id, answer
         )
 
         # Возвращаем обновлённый диалог
-        updated_conversation = await self.conversation_use_case.get_conversation(
+        updated_conversation = await self.manage_conversation_use_case.get_conversation(
             conversation_id
         )
 
@@ -136,14 +142,43 @@ class ConversationOrchestrator:
             Диалог (существующий или новый)
         """
         # Пытаемся получить последний диалог
-        conversation = await self.conversation_use_case.get_latest_conversation(
+        conversation = await self.manage_conversation_use_case.get_latest_conversation(
             user_id
         )
 
         # Если нет, создаём новый
         if not conversation:
-            conversation = await self.conversation_use_case.create_conversation(
+            conversation = await self.manage_conversation_use_case.create_conversation(
                 user_id
             )
 
         return conversation
+
+    async def handle_question(self, query: LegalQuery) -> LegalAnswer:
+        """
+        Обработать вопрос с автоматическим управлением диалогом.
+
+        Если conversation_id указан, продолжает существующий диалог.
+        Иначе создаёт новый диалог или использует последний активный.
+
+        Args:
+            query: Запрос пользователя
+
+        Returns:
+            Ответ на вопрос
+        """
+        if query.conversation_id:
+            # Продолжаем существующий диалог
+            _, answer = await self.continue_dialog(
+                conversation_id=query.conversation_id,
+                question=query.question,
+                user_id=query.user_id,
+            )
+        else:
+            # Начинаем новый диалог
+            _, answer = await self.start_new_dialog(
+                user_id=query.user_id,
+                first_question=query.question,
+            )
+
+        return answer

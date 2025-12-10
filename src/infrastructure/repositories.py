@@ -372,25 +372,23 @@ class ConversationRepository:
         Returns:
             LegalConversation: Обновлённый диалог
         """
-        # Это упрощённая версия - полная реализация требует маппинга всех изменений
-        # Для production нужно более сложное обновление с отслеживанием изменений
-        
+        # Обновляем нужные поля
         stmt = (
             update(ConversationModel)
-            .where(ConversationModel.user_id == conversation.user_id)
+            .where(ConversationModel.id == conversation.id)
             .values(
+                title=conversation.title,
                 metadata_json=conversation.metadata,
+                updated_at=conversation.updated_at,
             )
-            .returning(ConversationModel)
         )
         
-        result = await self.session.execute(stmt)
+        await self.session.execute(stmt)
         await self.session.commit()
-        conversation_model = result.scalar_one_or_none()
         
-        if conversation_model:
-            return conversation_model.to_entity()
-        return conversation
+        # Возвращаем обновлённый диалог
+        updated = await self.get_by_id(conversation.id)
+        return updated if updated else conversation
     
     async def delete(self, conversation_id: int) -> bool:
         """
