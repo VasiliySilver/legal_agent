@@ -23,7 +23,7 @@ class SearchStrategy(str, Enum):
 class SearchArticlesUseCase:
     """
     Use Case для поиска статей ТК РФ.
-    
+
     Поддерживает разные стратегии поиска:
     - По номеру статьи (точное совпадение)
     - Полнотекстовый поиск (PostgreSQL ILIKE)
@@ -168,9 +168,7 @@ class SearchArticlesUseCase:
             # Семантический поиск
             if not self.vector_service:
                 # Fallback на полнотекстовый поиск
-                print(
-                    "Векторный поиск недоступен, используется полнотекстовый"
-                )
+                print("Векторный поиск недоступен, используется полнотекстовый")
                 return await self.search_by_text(query, limit=limit)
 
             return await self.semantic_search(query, top_k=limit)
@@ -229,7 +227,7 @@ class SearchArticlesUseCase:
 class ArticleExplorerUseCase:
     """
     Use Case для исследования структуры ТК РФ.
-    
+
     Помогает пользователям ориентироваться в структуре кодекса.
     """
 
@@ -285,8 +283,7 @@ class ArticleExplorerUseCase:
             return [
                 article
                 for article in all_articles
-                if article.number.isdigit()
-                and start <= int(article.number) <= end
+                if article.number.isdigit() and start <= int(article.number) <= end
             ]
 
         except ValueError:

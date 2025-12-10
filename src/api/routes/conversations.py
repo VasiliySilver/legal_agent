@@ -2,7 +2,6 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
 from src.api.dependencies import (
     get_db_session,
     get_manage_conversation_use_case,
@@ -37,22 +36,22 @@ async def get_conversations(
 ) -> ConversationListResponse:
     """
     Получить список диалогов пользователя.
-    
+
     Args:
         user_id: ID пользователя
         session: Сессия БД
         manage_uc: Use case для управления диалогами
-    
+
     Returns:
         ConversationListResponse: Список диалогов
     """
     try:
         logger.info(f"Запрос списка диалогов для пользователя {user_id}")
-        
+
         conversations = await manage_uc.get_user_conversations(user_id)
-        
+
         logger.info(f"Найдено {len(conversations)} диалогов для пользователя {user_id}")
-        
+
         return ConversationListResponse(
             conversations=[
                 ConversationResponse(
@@ -67,7 +66,7 @@ async def get_conversations(
             ],
             total=len(conversations),
         )
-    
+
     except Exception as e:
         logger.error(f"Ошибка получения списка диалогов: {e}", exc_info=True)
         raise HTTPException(
@@ -90,25 +89,25 @@ async def create_conversation(
 ) -> ConversationResponse:
     """
     Создать новый диалог.
-    
+
     Args:
         request: Запрос с данными пользователя
         session: Сессия БД
         manage_uc: Use case для управления диалогами
-    
+
     Returns:
         ConversationResponse: Созданный диалог
     """
     try:
         logger.info(f"Создание нового диалога для пользователя {request.user_id}")
-        
+
         conversation = await manage_uc.create_conversation(
             user_id=request.user_id,
             title=request.title,
         )
-        
+
         logger.info(f"Диалог создан: {conversation.id}")
-        
+
         return ConversationResponse(
             id=str(conversation.id),
             user_id=conversation.user_id,
@@ -117,7 +116,7 @@ async def create_conversation(
             updated_at=conversation.updated_at,
             message_count=0,
         )
-    
+
     except Exception as e:
         logger.error(f"Ошибка создания диалога: {e}", exc_info=True)
         raise HTTPException(
@@ -140,21 +139,21 @@ async def get_conversation(
 ) -> ConversationDetailResponse:
     """
     Получить диалог с историей сообщений.
-    
+
     Args:
         conversation_id: ID диалога
         session: Сессия БД
         manage_uc: Use case для управления диалогами
-    
+
     Returns:
         ConversationDetailResponse: Диалог с историей
-    
+
     Raises:
         HTTPException: Если диалог не найден
     """
     try:
         logger.info(f"Запрос диалога {conversation_id}")
-        
+
         # Преобразуем conversation_id в int
         try:
             conv_id = int(conversation_id)
@@ -164,7 +163,7 @@ async def get_conversation(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Диалог {conversation_id} не найден",
             )
-        
+
         try:
             conversation = await manage_uc.get_conversation(conv_id)
         except ValueError as e:
@@ -173,9 +172,11 @@ async def get_conversation(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=str(e),
             )
-        
-        logger.info(f"Диалог найден: {conversation_id}, сообщений: {len(conversation.messages)}")
-        
+
+        logger.info(
+            f"Диалог найден: {conversation_id}, сообщений: {len(conversation.messages)}"
+        )
+
         return ConversationDetailResponse(
             id=str(conversation.id),
             user_id=conversation.user_id,
@@ -193,7 +194,7 @@ async def get_conversation(
                 for msg in conversation.messages
             ],
         )
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -217,18 +218,18 @@ async def delete_conversation(
 ):
     """
     Удалить диалог.
-    
+
     Args:
         conversation_id: ID диалога
         session: Сессия БД
         manage_uc: Use case для управления диалогами
-    
+
     Raises:
         HTTPException: Если диалог не найден
     """
     try:
         logger.info(f"Удаление диалога {conversation_id}")
-        
+
         # Преобразуем conversation_id в int
         try:
             conv_id = int(conversation_id)
@@ -238,17 +239,17 @@ async def delete_conversation(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Диалог {conversation_id} не найден",
             )
-        
+
         deleted = await manage_uc.delete_conversation(conv_id)
-        
+
         if not deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Диалог {conversation_id} не найден",
             )
-        
+
         logger.info(f"Диалог удалён: {conversation_id}")
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -274,22 +275,22 @@ async def update_conversation(
 ) -> ConversationResponse:
     """
     Обновить диалог (пока только название).
-    
+
     Args:
         conversation_id: ID диалога
         request: Данные для обновления
         session: Сессия БД
         manage_uc: Use case для управления диалогами
-    
+
     Returns:
         ConversationResponse: Обновлённый диалог
-    
+
     Raises:
         HTTPException: Если диалог не найден
     """
     try:
         logger.info(f"Обновление диалога {conversation_id}")
-        
+
         # Преобразуем conversation_id в int
         try:
             conv_id = int(conversation_id)
@@ -299,15 +300,15 @@ async def update_conversation(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Диалог {conversation_id} не найден",
             )
-        
+
         # Обновляем диалог
         conversation = await manage_uc.update_conversation(
             conversation_id=conv_id,
             title=request.title,
         )
-        
+
         logger.info(f"Диалог обновлён: {conversation_id}")
-        
+
         return ConversationResponse(
             id=str(conversation.id),
             user_id=conversation.user_id,
@@ -316,7 +317,7 @@ async def update_conversation(
             updated_at=conversation.updated_at,
             message_count=len(conversation.messages),
         )
-    
+
     except ValueError as e:
         logger.warning(f"Диалог не найден: {conversation_id}")
         raise HTTPException(

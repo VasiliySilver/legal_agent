@@ -15,7 +15,7 @@ from src.infrastructure.repositories import ConversationRepository
 class ManageConversationUseCase:
     """
     Use Case для управления диалогами пользователей.
-    
+
     Основные операции:
     - Создание нового диалога
     - Добавление сообщения в диалог
@@ -32,7 +32,9 @@ class ManageConversationUseCase:
         """
         self.repository = conversation_repository
 
-    async def create_conversation(self, user_id: str, title: Optional[str] = None) -> LegalConversation:
+    async def create_conversation(
+        self, user_id: str, title: Optional[str] = None
+    ) -> LegalConversation:
         """
         Создать новый диалог для пользователя.
 
@@ -87,9 +89,7 @@ class ManageConversationUseCase:
             raise ValueError(f"Диалог {conversation_id} не найден")
 
         # Добавляем сообщение
-        updated_conversation = await self.repository.add_message(
-            conversation_id, query
-        )
+        updated_conversation = await self.repository.add_message(conversation_id, query)
 
         # Возвращаем последнее добавленное сообщение
         return updated_conversation.messages[-1]
@@ -145,9 +145,7 @@ class ManageConversationUseCase:
 
         return conversation
 
-    async def get_conversation_history(
-        self, conversation_id: int
-    ) -> list[Message]:
+    async def get_conversation_history(self, conversation_id: int) -> list[Message]:
         """
         Получить историю сообщений диалога.
 
@@ -220,7 +218,9 @@ class ManageConversationUseCase:
         """
         return await self.repository.delete(conversation_id)
 
-    async def update_conversation(self, conversation_id: int, title: Optional[str] = None) -> Optional[LegalConversation]:
+    async def update_conversation(
+        self, conversation_id: int, title: Optional[str] = None
+    ) -> Optional[LegalConversation]:
         """
         Обновить диалог.
 
@@ -236,19 +236,19 @@ class ManageConversationUseCase:
         """
         # Получаем существующий диалог
         conversation = await self.repository.get_by_id(conversation_id)
-        
+
         if not conversation:
             raise ValueError(f"Диалог {conversation_id} не найден")
-        
+
         # Обновляем поля
         if title is not None:
             conversation.title = title
-        
+
         conversation.updated_at = datetime.now()
-        
+
         # Сохраняем изменения
         updated_conversation = await self.repository.update(conversation)
-        
+
         return updated_conversation
 
     async def get_conversation_count(self, user_id: str) -> int:
@@ -265,5 +265,3 @@ class ManageConversationUseCase:
             raise ValueError("user_id не может быть пустым")
 
         return await self.repository.count_by_user_id(user_id.strip())
-
-

@@ -5,7 +5,7 @@ LLM сервис для генерации ответов на юридичес�
 """
 
 import re
-from typing import Any, Optional
+from typing import Optional
 
 from groq import AsyncGroq
 
@@ -33,8 +33,9 @@ class LLMService:
         client_kwargs = {"api_key": api_key}
         if proxy:
             import httpx
+
             client_kwargs["http_client"] = httpx.AsyncClient(proxy=proxy)
-        
+
         self.client = AsyncGroq(**client_kwargs)
         self.model = model
         self.system_prompt = self._get_system_prompt()
@@ -82,11 +83,11 @@ class LLMService:
         context_parts = ["Релевантные статьи ТК РФ:\n"]
 
         for article in articles:
-            context_parts.append(f"\n{'='*60}")
+            context_parts.append(f"\n{'=' * 60}")
             context_parts.append(f"Статья {article.number}. {article.title}")
             context_parts.append(f"Глава: {article.chapter}")
             context_parts.append(f"\n{article.content}")
-            context_parts.append(f"{'='*60}\n")
+            context_parts.append(f"{'=' * 60}\n")
 
         return "\n".join(context_parts)
 
@@ -199,7 +200,7 @@ class LLMService:
         # Также ловим "статьям 80 и 77" (где 77 идёт после "и")
         pattern = r"стать[иеюя][мх]?\s+(\d+(?:\s+и\s+\d+)*)"
         matches = re.findall(pattern, text, re.IGNORECASE)
-        
+
         # Извлекаем все числа из найденных совпадений
         numbers = []
         for match in matches:
@@ -245,7 +246,7 @@ def extract_article_numbers(text: str) -> list[int]:
     """
     pattern = r"стать[иеюя][мх]?\s+(\d+(?:\s+и\s+\d+)*)"
     matches = re.findall(pattern, text, re.IGNORECASE)
-    
+
     # Извлекаем все числа из найденных совпадений
     numbers = []
     for match in matches:

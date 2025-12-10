@@ -75,9 +75,7 @@ class MultiStrategySearchUseCase:
                 print(f"Ошибка семантического поиска: {e}")
 
         # Стратегия 3: Полнотекстовый поиск (fallback)
-        results = await self.search_use_case.search_by_text(
-            query, limit=max_results
-        )
+        results = await self.search_use_case.search_by_text(query, limit=max_results)
 
         return results
 

@@ -282,7 +282,7 @@ class TestAnswerLegalQuestionUseCase:
         )
 
         # Act
-        answer = await use_case.execute(query, conversation_id=conv_id)
+        await use_case.execute(query, conversation_id=conv_id)
 
         # Assert
         mock_conversation_repository.get_by_id.assert_called_once_with(conv_id)
@@ -304,7 +304,7 @@ class TestAnswerLegalQuestionUseCase:
         # Act & Assert
         # Pydantic должен отклонить пустой вопрос на уровне валидации
         with pytest.raises(ValidationError):
-            query = LegalQuery(
+            LegalQuery(
                 question="",
                 user_id="user_123",
             )

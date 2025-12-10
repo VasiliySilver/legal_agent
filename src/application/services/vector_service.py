@@ -34,9 +34,7 @@ class VectorStore(ABC):
     """Абстрактное хранилище для векторного поиска."""
 
     @abstractmethod
-    async def add_vectors(
-        self, vectors: np.ndarray, articles: list[Article]
-    ) -> None:
+    async def add_vectors(self, vectors: np.ndarray, articles: list[Article]) -> None:
         """Добавить векторы в хранилище."""
         pass
 
@@ -75,6 +73,7 @@ class FAISSVectorStore(VectorStore):
         """Инициализация FAISS хранилища."""
         try:
             import faiss
+
             self.faiss = faiss
         except ImportError:
             raise ImportError(
@@ -84,9 +83,7 @@ class FAISSVectorStore(VectorStore):
         self.index: Optional[any] = None
         self.dimension: Optional[int] = None
 
-    async def add_vectors(
-        self, vectors: np.ndarray, articles: list[Article]
-    ) -> None:
+    async def add_vectors(self, vectors: np.ndarray, articles: list[Article]) -> None:
         """Добавить векторы в FAISS индекс."""
         if vectors.shape[0] == 0:
             raise ValueError("Cannot add empty vectors")
@@ -102,9 +99,7 @@ class FAISSVectorStore(VectorStore):
         if self.index is None:
             raise ValueError("Index not initialized")
 
-        distances, indices = self.index.search(
-            query_vector.astype(np.float32), top_k
-        )
+        distances, indices = self.index.search(query_vector.astype(np.float32), top_k)
         return distances[0].tolist(), indices[0].tolist()
 
     async def save(self, path: str) -> None:
@@ -137,6 +132,7 @@ class PostgresVectorStore(VectorStore):
         """
         try:
             import asyncpg
+
             self.asyncpg = asyncpg
         except ImportError:
             raise ImportError(
@@ -180,9 +176,7 @@ class PostgresVectorStore(VectorStore):
                 WITH (lists = 100);
             """)
 
-    async def add_vectors(
-        self, vectors: np.ndarray, articles: list[Article]
-    ) -> None:
+    async def add_vectors(self, vectors: np.ndarray, articles: list[Article]) -> None:
         """Добавить векторы в PostgreSQL."""
         if vectors.shape[0] == 0:
             raise ValueError("Cannot add empty vectors")
@@ -379,9 +373,7 @@ class VectorService:
         query_embedding = model.encode([query])
 
         # Ищем в хранилище
-        distances, indices = await self.store.search(
-            query_embedding, top_k
-        )
+        distances, indices = await self.store.search(query_embedding, top_k)
 
         # Формируем результаты
         results = []
@@ -469,7 +461,9 @@ class VectorService:
                 metadata = pickle.load(f)
                 self.dimension = metadata.get("dimension")
 
-        print(f"✓ Loaded {self.backend_type} index from {path} ({len(self.articles)} articles)")
+        print(
+            f"✓ Loaded {self.backend_type} index from {path} ({len(self.articles)} articles)"
+        )
 
     def get_stats(self) -> dict[str, any]:
         """
@@ -490,4 +484,3 @@ class VectorService:
         """Закрытие соединений (для PostgreSQL)."""
         if isinstance(self.store, PostgresVectorStore):
             await self.store.close()
-

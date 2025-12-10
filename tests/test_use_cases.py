@@ -8,8 +8,8 @@
 """
 
 from datetime import datetime
-from unittest.mock import AsyncMock, Mock, patch
-from uuid import UUID, uuid4
+from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 
@@ -139,7 +139,7 @@ class TestAnswerLegalQuestionUseCase:
             question="Как взять отпуск без сохранения зарплаты?",
             user_id="user_123",
         )
-        
+
         # Настраиваем моки
         mock_article_repository.search_by_text.return_value = [sample_articles[0]]
         mock_llm_service.generate_answer.return_value = LegalAnswer(
@@ -147,21 +147,22 @@ class TestAnswerLegalQuestionUseCase:
             sources=[77],
             confidence=0.95,
         )
-        
+
         # Act
         # TODO: Импортировать и вызвать use case после реализации
         # from src.application.use_cases.answer_legal_question import AnswerLegalQuestionUseCase
         # use_case = AnswerLegalQuestionUseCase(mock_article_repository, mock_llm_service)
         # answer = await use_case.execute(query)
-        
+
         # Assert
         # mock_article_repository.search_by_text.assert_called_once_with(query.question)
         # mock_llm_service.generate_answer.assert_called_once()
         # assert answer.answer
         # assert answer.sources
         # assert answer.confidence > 0.8
-        
+
         # Заглушка для прохождения теста
+        assert query is not None
         assert True
 
     @pytest.mark.asyncio
@@ -176,22 +177,23 @@ class TestAnswerLegalQuestionUseCase:
             question="Какая погода завтра?",
             user_id="user_123",
         )
-        
+
         mock_article_repository.search_by_text.return_value = []
         mock_llm_service.generate_answer.return_value = LegalAnswer(
             answer="Извините, я не нашёл релевантных статей ТК РФ по вашему вопросу.",
             sources=[],
             confidence=0.1,
         )
-        
+
         # Act
         # TODO: Вызвать use case после реализации
-        
+
         # Assert
         # mock_article_repository.search_by_text.assert_called_once()
         # assert answer.confidence < 0.5
         # assert not answer.sources
-        
+
+        assert query is not None
         assert True
 
     @pytest.mark.asyncio
@@ -210,22 +212,25 @@ class TestAnswerLegalQuestionUseCase:
             user_id="user_123",
             conversation_id=sample_conversation.id,
         )
-        
-        mock_conversation_repository.get_history.return_value = sample_conversation.messages
+
+        mock_conversation_repository.get_history.return_value = (
+            sample_conversation.messages
+        )
         mock_article_repository.search_by_text.return_value = [sample_articles[1]]
         mock_llm_service.generate_answer.return_value = LegalAnswer(
             answer="В случае неотработки...",
             sources=[80],
             confidence=0.9,
         )
-        
+
         # Act
         # TODO: Вызвать use case с контекстом
-        
+
         # Assert
         # mock_conversation_repository.get_history.assert_called_once()
         # Убедиться, что история передана в LLM
-        
+
+        assert query is not None
         assert True
 
 
@@ -249,18 +254,18 @@ class TestManageConversationUseCase:
             messages=[],
         )
         mock_conversation_repository.create.return_value = expected_conv
-        
+
         # Act
         # TODO: Вызвать use case после реализации
         # from src.application.use_cases.manage_conversation import ManageConversationUseCase
         # use_case = ManageConversationUseCase(mock_conversation_repository)
         # conversation = await use_case.create_conversation(user_id)
-        
+
         # Assert
         # mock_conversation_repository.create.assert_called_once()
         # assert conversation.user_id == user_id
         # assert conversation.messages == []
-        
+
         assert True
 
     @pytest.mark.asyncio
@@ -279,18 +284,18 @@ class TestManageConversationUseCase:
             content="Ещё вопрос...",
             timestamp=datetime.now(),
         )
-        
+
         mock_conversation_repository.add_message.return_value = message
-        
+
         # Act
         # TODO: Вызвать use case
         # added_message = await use_case.add_message(conv_id, "user", "Ещё вопрос...")
-        
+
         # Assert
         # mock_conversation_repository.add_message.assert_called_once()
         # assert added_message.role == "user"
         # assert added_message.conversation_id == conv_id
-        
+
         assert True
 
     @pytest.mark.asyncio
@@ -301,32 +306,32 @@ class TestManageConversationUseCase:
     ):
         """Тест: получение истории диалога."""
         # Arrange
-        conv_id = sample_conversation.id
-        mock_conversation_repository.get_history.return_value = sample_conversation.messages
-        
+        mock_conversation_repository.get_history.return_value = (
+            sample_conversation.messages
+        )
+
         # Act
         # TODO: Вызвать use case
-        # history = await use_case.get_history(conv_id)
-        
+        # history = await use_case.get_history(sample_conversation.id)
+
         # Assert
         # mock_conversation_repository.get_history.assert_called_once_with(conv_id)
         # assert len(history) == 2
         # assert history[0].role == "user"
-        
+
         assert True
 
     @pytest.mark.asyncio
     async def test_get_nonexistent_conversation(self, mock_conversation_repository):
         """Тест: запрос несуществующего диалога."""
         # Arrange
-        fake_id = uuid4()
         mock_conversation_repository.get_by_id.return_value = None
-        
+
         # Act & Assert
         # TODO: Проверить, что вызывается исключение
         # with pytest.raises(ValueError, match="Conversation not found"):
-        #     await use_case.get_conversation(fake_id)
-        
+        #     await use_case.get_conversation(uuid4())
+
         assert True
 
 
@@ -346,19 +351,18 @@ class TestSearchArticlesUseCase:
     ):
         """Тест: поиск статьи по номеру."""
         # Arrange
-        article_number = "80"
         mock_article_repository.get_by_number.return_value = sample_articles[1]
-        
+
         # Act
         # TODO: Вызвать use case
         # from src.application.use_cases.search_articles import SearchArticlesUseCase
         # use_case = SearchArticlesUseCase(mock_article_repository)
-        # article = await use_case.search_by_number(article_number)
-        
+        # article = await use_case.search_by_number("80")
+
         # Assert
         # mock_article_repository.get_by_number.assert_called_once_with(article_number)
         # assert article.number == "80"
-        
+
         assert True
 
     @pytest.mark.asyncio
@@ -369,18 +373,17 @@ class TestSearchArticlesUseCase:
     ):
         """Тест: полнотекстовый поиск статей."""
         # Arrange
-        search_query = "увольнение"
         mock_article_repository.search_by_text.return_value = [sample_articles[1]]
-        
+
         # Act
         # TODO: Вызвать use case
-        # articles = await use_case.search_by_text(search_query)
-        
+        # articles = await use_case.search_by_text("увольнение")
+
         # Assert
-        # mock_article_repository.search_by_text.assert_called_once_with(search_query)
+        # mock_article_repository.search_by_text.assert_called_once_with("увольнение")
         # assert len(articles) == 1
         # assert "увольнение" in articles[0].title.lower() or "увольнение" in articles[0].content.lower()
-        
+
         assert True
 
     @pytest.mark.asyncio
@@ -392,33 +395,31 @@ class TestSearchArticlesUseCase:
     ):
         """Тест: семантический поиск похожих статей."""
         # Arrange
-        query = "как прекратить трудовые отношения"
         mock_vector_service.find_similar.return_value = [sample_articles[1]]
-        
+
         # Act
         # TODO: Вызвать use case с векторным поиском
-        # articles = await use_case.semantic_search(query)
-        
+        # articles = await use_case.semantic_search("как прекратить трудовые отношения")
+
         # Assert
         # mock_vector_service.find_similar.assert_called_once()
         # assert len(articles) >= 1
-        
+
         assert True
 
     @pytest.mark.asyncio
     async def test_search_empty_results(self, mock_article_repository):
         """Тест: поиск без результатов."""
         # Arrange
-        search_query = "несуществующая тема"
         mock_article_repository.search_by_text.return_value = []
-        
+
         # Act
         # TODO: Вызвать use case
         # articles = await use_case.search_by_text(search_query)
-        
+
         # Assert
         # assert articles == []
-        
+
         assert True
 
 
@@ -442,7 +443,7 @@ class TestUseCasesIntegration:
         # Arrange
         user_id = "user_123"
         question = "Как уволиться?"
-        
+
         # Создание диалога
         conversation = LegalConversation(
             id=uuid4(),
@@ -451,10 +452,10 @@ class TestUseCasesIntegration:
             messages=[],
         )
         mock_conversation_repository.create.return_value = conversation
-        
+
         # Поиск статей
         mock_article_repository.search_by_text.return_value = [sample_articles[1]]
-        
+
         # Генерация ответа
         answer = LegalAnswer(
             answer="Согласно статье 80 ТК РФ...",
@@ -462,7 +463,7 @@ class TestUseCasesIntegration:
             confidence=0.95,
         )
         mock_llm_service.generate_answer.return_value = answer
-        
+
         # Сохранение сообщений
         user_message = Message(
             id=uuid4(),
@@ -483,7 +484,7 @@ class TestUseCasesIntegration:
             user_message,
             assistant_message,
         ]
-        
+
         # Act
         # TODO: Выполнить полный цикл через orchestrator
         # 1. Создать диалог
@@ -491,11 +492,11 @@ class TestUseCasesIntegration:
         # 3. Найти статьи
         # 4. Сгенерировать ответ
         # 5. Добавить ответ ассистента
-        
+
         # Assert
         # mock_conversation_repository.create.assert_called_once()
         # mock_article_repository.search_by_text.assert_called_once()
         # mock_llm_service.generate_answer.assert_called_once()
         # assert mock_conversation_repository.add_message.call_count == 2
-        
+
         assert True

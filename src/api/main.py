@@ -1,28 +1,35 @@
 """Главное FastAPI приложение для Legal Agent."""
 
-from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from datetime import datetime
 import logging
 import sys
+
 from dotenv import load_dotenv
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 # Загрузка переменных окружения из .env файла
 load_dotenv()
 
-from src.infrastructure.database import init_database, close_database, check_connection
-from src.api.routes import questions_router, conversations_router, articles_router
-from src.api.schemas import HealthCheckResponse, ErrorResponse
+from src.infrastructure.database import (  # noqa: E402
+    init_database,
+    close_database,
+    check_connection,
+)
+from src.api.routes import (  # noqa: E402
+    questions_router,
+    conversations_router,
+    articles_router,
+)
+from src.api.schemas import HealthCheckResponse, ErrorResponse  # noqa: E402
 
 # Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
+    handlers=[logging.StreamHandler(sys.stdout)],
 )
 logger = logging.getLogger(__name__)
 
@@ -31,36 +38,37 @@ logger = logging.getLogger(__name__)
 # LIFESPAN EVENT HANDLER
 # ============================================================================
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     Управление жизненным циклом приложения.
-    
+
     Startup:
         - Инициализация базы данных
         - Проверка подключения
-    
+
     Shutdown:
         - Закрытие подключений к БД
     """
     # Startup
     logger.info("🚀 Запуск Legal Agent API...")
-    
+
     try:
         await init_database()
         logger.info("✅ База данных инициализирована")
-        
+
         if await check_connection():
             logger.info("✅ Подключение к БД успешно")
         else:
             logger.error("❌ Ошибка подключения к БД")
     except Exception as e:
         logger.error(f"❌ Ошибка инициализации: {e}", exc_info=True)
-    
+
     logger.info("✅ Legal Agent API запущен")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("🛑 Остановка Legal Agent API...")
     await close_database()
@@ -101,7 +109,7 @@ app.add_middleware(
 async def log_requests(request: Request, call_next):
     """Логирование всех HTTP запросов."""
     logger.info(f"📨 {request.method} {request.url.path}")
-    
+
     try:
         response = await call_next(request)
         logger.info(f"📤 {request.method} {request.url.path} - {response.status_code}")
@@ -114,6 +122,7 @@ async def log_requests(request: Request, call_next):
 # ============================================================================
 # EXCEPTION HANDLERS
 # ============================================================================
+
 
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
@@ -178,12 +187,12 @@ async def root():
 async def health_check():
     """
     Проверка работоспособности API и подключения к БД.
-    
+
     Returns:
         HealthCheckResponse: Статус приложения
     """
     db_status = "ok" if await check_connection() else "error"
-    
+
     return HealthCheckResponse(
         status="ok",
         database=db_status,
@@ -197,7 +206,7 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     # Для локальной разработки
     uvicorn.run(
         "src.api.main:app",

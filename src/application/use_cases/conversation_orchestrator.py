@@ -41,7 +41,9 @@ class ConversationOrchestratorUseCase:
             Кортеж (диалог, ответ)
         """
         # Создаём новый диалог
-        conversation = await self.manage_conversation_use_case.create_conversation(user_id)
+        conversation = await self.manage_conversation_use_case.create_conversation(
+            user_id
+        )
 
         # Создаём запрос
         query = LegalQuery(
@@ -50,9 +52,7 @@ class ConversationOrchestratorUseCase:
         )
 
         # Добавляем вопрос в диалог
-        await self.manage_conversation_use_case.add_user_message(
-            conversation.id, query
-        )
+        await self.manage_conversation_use_case.add_user_message(conversation.id, query)
 
         # Получаем ответ
         answer = await self.answer_use_case.execute(
@@ -93,9 +93,7 @@ class ConversationOrchestratorUseCase:
             Кортеж (обновлённый диалог, ответ)
         """
         # Проверяем существование диалога
-        conversation = await self.manage_conversation_use_case.get_conversation(
-            conversation_id
-        )
+        await self.manage_conversation_use_case.get_conversation(conversation_id)
 
         # Создаём запрос
         query = LegalQuery(
@@ -104,9 +102,7 @@ class ConversationOrchestratorUseCase:
         )
 
         # Добавляем вопрос
-        await self.manage_conversation_use_case.add_user_message(
-            conversation_id, query
-        )
+        await self.manage_conversation_use_case.add_user_message(conversation_id, query)
 
         # Получаем ответ с учётом контекста диалога
         answer = await self.answer_use_case.execute(
@@ -129,9 +125,7 @@ class ConversationOrchestratorUseCase:
 
         return updated_conversation, answer
 
-    async def get_or_create_conversation(
-        self, user_id: str
-    ) -> LegalConversation:
+    async def get_or_create_conversation(self, user_id: str) -> LegalConversation:
         """
         Получить последний диалог пользователя или создать новый.
 
