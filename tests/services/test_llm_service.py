@@ -63,9 +63,7 @@ class TestLLMService:
 
         with patch("src.application.services.llm_service.AsyncGroq") as mock_groq:
             mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=mock_response
-            )
+            mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
             mock_groq.return_value = mock_client
 
             service = LLMService(api_key="test_key")
@@ -99,9 +97,7 @@ class TestLLMService:
 
         with patch("src.application.services.llm_service.AsyncGroq") as mock_groq:
             mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=mock_response
-            )
+            mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
             mock_groq.return_value = mock_client
 
             service = LLMService(api_key="test_key")
@@ -114,9 +110,7 @@ class TestLLMService:
             assert not answer.sources
 
     @pytest.mark.asyncio
-    async def test_generate_answer_with_conversation_history(
-        self, sample_articles
-    ):
+    async def test_generate_answer_with_conversation_history(self, sample_articles):
         """Тест: генерация ответа с учётом истории диалога."""
         # Arrange
         question = "А если я не отработаю?"
@@ -148,15 +142,13 @@ class TestLLMService:
 
         with patch("src.application.services.llm_service.AsyncGroq") as mock_groq:
             mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=mock_response
-            )
+            mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
             mock_groq.return_value = mock_client
 
             service = LLMService(api_key="test_key")
 
             # Act
-            answer = await service.generate_answer(question, articles, history)
+            await service.generate_answer(question, articles, history)
 
             # Assert
             # Проверяем, что история была включена в промпт
@@ -259,18 +251,12 @@ class TestLLMService:
 
         mock_response = Mock()
         mock_response.choices = [
-            Mock(
-                message=Mock(
-                    content="Согласно статье 80 и 77 ТК РФ..."
-                )
-            )
+            Mock(message=Mock(content="Согласно статье 80 и 77 ТК РФ..."))
         ]
 
         with patch("src.application.services.llm_service.AsyncGroq") as mock_groq:
             mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=mock_response
-            )
+            mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
             mock_groq.return_value = mock_client
 
             service = LLMService(api_key="test_key")
@@ -290,15 +276,11 @@ class TestLLMService:
         articles = []
 
         mock_response = Mock()
-        mock_response.choices = [
-            Mock(message=Mock(content="Не могу ответить."))
-        ]
+        mock_response.choices = [Mock(message=Mock(content="Не могу ответить."))]
 
         with patch("src.application.services.llm_service.AsyncGroq") as mock_groq:
             mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=mock_response
-            )
+            mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
             mock_groq.return_value = mock_client
 
             service = LLMService(api_key="test_key")
@@ -328,7 +310,7 @@ class TestLLMService:
 
             # Act
             answer = await service.generate_answer(question, articles)
-            
+
             # Assert
             # Сервис должен вернуть fallback ответ вместо исключения
             assert "ошибка" in answer.answer.lower()
@@ -342,15 +324,11 @@ class TestLLMService:
         question = "Тест"
 
         mock_response = Mock()
-        mock_response.choices = [
-            Mock(message=Mock(content="Ответ"))
-        ]
+        mock_response.choices = [Mock(message=Mock(content="Ответ"))]
 
         with patch("src.application.services.llm_service.AsyncGroq") as mock_groq:
             mock_client = AsyncMock()
-            mock_client.chat.completions.create = AsyncMock(
-                return_value=mock_response
-            )
+            mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
             mock_groq.return_value = mock_client
 
             service = LLMService(api_key="test_key", model=custom_model)

@@ -6,7 +6,7 @@
 
 from datetime import datetime
 from unittest.mock import AsyncMock
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
@@ -142,9 +142,7 @@ class TestManageConversationUseCase:
 
         # Assert
         mock_conversation_repository.get_by_id.assert_called_once_with(conv_id)
-        mock_conversation_repository.add_message.assert_called_once_with(
-            conv_id, query
-        )
+        mock_conversation_repository.add_message.assert_called_once_with(conv_id, query)
         assert added_message.role == "user"
         assert added_message.content == query.question
 
@@ -378,7 +376,5 @@ class TestManageConversationUseCase:
         count = await use_case.get_conversation_count(user_id)
 
         # Assert
-        mock_conversation_repository.count_by_user_id.assert_called_once_with(
-            user_id
-        )
+        mock_conversation_repository.count_by_user_id.assert_called_once_with(user_id)
         assert count == 5

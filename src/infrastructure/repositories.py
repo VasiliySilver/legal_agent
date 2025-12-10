@@ -17,10 +17,11 @@ from src.infrastructure.models import ArticleModel, ConversationModel, MessageMo
 # ARTICLE REPOSITORY
 # ============================================================================
 
+
 class ArticleRepository:
     """
     Репозиторий для работы со статьями ТК РФ
-    
+
     Операции:
     - Создание статьи
     - Получение статьи по номеру
@@ -29,17 +30,17 @@ class ArticleRepository:
     - Обновление статьи
     - Удаление статьи
     """
-    
+
     def __init__(self, session: AsyncSession):
         self.session = session
-    
+
     async def create(self, article: Article) -> Article:
         """
         Создать новую статью в БД
-        
+
         Args:
             article: Доменная сущность статьи
-            
+
         Returns:
             Article: Созданная статья
         """
@@ -48,70 +49,70 @@ class ArticleRepository:
         await self.session.commit()
         await self.session.refresh(article_model)
         return article_model.to_entity()
-    
+
     async def get_by_number(self, number: str) -> Optional[Article]:
         """
         Получить статью по номеру
-        
+
         Args:
             number: Номер статьи (например, "80")
-            
+
         Returns:
             Article | None: Статья или None, если не найдена
         """
         stmt = select(ArticleModel).where(ArticleModel.number == number)
         result = await self.session.execute(stmt)
         article_model = result.scalar_one_or_none()
-        
+
         if article_model:
             return article_model.to_entity()
         return None
-    
+
     async def get_by_id(self, article_id: int) -> Optional[Article]:
         """
         Получить статью по ID
-        
+
         Args:
             article_id: ID статьи в БД
-            
+
         Returns:
             Article | None: Статья или None
         """
         stmt = select(ArticleModel).where(ArticleModel.id == article_id)
         result = await self.session.execute(stmt)
         article_model = result.scalar_one_or_none()
-        
+
         if article_model:
             return article_model.to_entity()
         return None
-    
+
     async def get_all(self, limit: int = 100, offset: int = 0) -> List[Article]:
         """
         Получить все статьи (с пагинацией)
-        
+
         Args:
             limit: Максимальное количество статей
             offset: Смещение (для пагинации)
-            
+
         Returns:
             List[Article]: Список статей
         """
         stmt = select(ArticleModel).limit(limit).offset(offset)
         result = await self.session.execute(stmt)
         article_models = result.scalars().all()
-        
+
         return [model.to_entity() for model in article_models]
-    
+
     async def search(self, query: str, limit: int = 10) -> List[Article]:
         """
         Полнотекстовый поиск по статьям
-        
+
         Использует PostgreSQL pg_trgm для нечёткого поиска
-        
+
         Args:
             query: Поисковый запрос
             limit: Максимальное количество результатов
-            
+
         Returns:
             List[Article]: Список найденных статей
         """
@@ -128,20 +129,20 @@ class ArticleRepository:
             )
             .limit(limit)
         )
-        
+
         result = await self.session.execute(stmt)
         article_models = result.scalars().all()
-        
+
         return [model.to_entity() for model in article_models]
-    
+
     async def search_by_similarity(self, query: str, limit: int = 10) -> List[Article]:
         """
         Поиск по схожести (для PostgreSQL с pg_trgm)
-        
+
         Args:
             query: Поисковый запрос
             limit: Максимальное количество результатов
-            
+
         Returns:
             List[Article]: Список статей, отсортированных по релевантности
         """
@@ -157,20 +158,20 @@ class ArticleRepository:
             .order_by(func.similarity(ArticleModel.content, query).desc())
             .limit(limit)
         )
-        
+
         result = await self.session.execute(stmt)
         article_models = result.scalars().all()
-        
+
         return [model.to_entity() for model in article_models]
-    
+
     async def update(self, number: str, article: Article) -> Optional[Article]:
         """
         Обновить статью
-        
+
         Args:
             number: Номер статьи
             article: Обновлённая статья
-            
+
         Returns:
             Article | None: Обновлённая статья или None
         """
@@ -184,35 +185,35 @@ class ArticleRepository:
             )
             .returning(ArticleModel)
         )
-        
+
         result = await self.session.execute(stmt)
         await self.session.commit()
         article_model = result.scalar_one_or_none()
-        
+
         if article_model:
             return article_model.to_entity()
         return None
-    
+
     async def delete(self, number: str) -> bool:
         """
         Удалить статью
-        
+
         Args:
             number: Номер статьи
-            
+
         Returns:
             bool: True, если статья удалена
         """
         stmt = delete(ArticleModel).where(ArticleModel.number == number)
         result = await self.session.execute(stmt)
         await self.session.commit()
-        
+
         return result.rowcount > 0
-    
+
     async def count(self) -> int:
         """
         Получить общее количество статей
-        
+
         Returns:
             int: Количество статей в БД
         """
@@ -225,10 +226,11 @@ class ArticleRepository:
 # CONVERSATION REPOSITORY
 # ============================================================================
 
+
 class ConversationRepository:
     """
     Репозиторий для работы с диалогами
-    
+
     Операции:
     - Создание диалога
     - Получение диалога по ID
@@ -237,17 +239,17 @@ class ConversationRepository:
     - Обновление диалога
     - Удаление диалога
     """
-    
+
     def __init__(self, session: AsyncSession):
         self.session = session
-    
+
     async def create(self, conversation: LegalConversation) -> LegalConversation:
         """
         Создать новый диалог
-        
+
         Args:
             conversation: Доменная сущность диалога
-            
+
         Returns:
             LegalConversation: Созданный диалог
         """
@@ -256,14 +258,14 @@ class ConversationRepository:
         await self.session.commit()
         await self.session.refresh(conversation_model)
         return conversation_model.to_entity()
-    
+
     async def get_by_id(self, conversation_id: int) -> Optional[LegalConversation]:
         """
         Получить диалог по ID
-        
+
         Args:
             conversation_id: ID диалога
-            
+
         Returns:
             LegalConversation | None: Диалог или None
         """
@@ -274,25 +276,22 @@ class ConversationRepository:
         )
         result = await self.session.execute(stmt)
         conversation_model = result.scalar_one_or_none()
-        
+
         if conversation_model:
             return conversation_model.to_entity()
         return None
-    
+
     async def get_by_user_id(
-        self, 
-        user_id: str, 
-        limit: int = 10, 
-        offset: int = 0
+        self, user_id: str, limit: int = 10, offset: int = 0
     ) -> List[LegalConversation]:
         """
         Получить все диалоги пользователя
-        
+
         Args:
             user_id: ID пользователя
             limit: Максимальное количество диалогов
             offset: Смещение
-            
+
         Returns:
             List[LegalConversation]: Список диалогов
         """
@@ -306,16 +305,16 @@ class ConversationRepository:
         )
         result = await self.session.execute(stmt)
         conversation_models = result.scalars().all()
-        
+
         return [model.to_entity() for model in conversation_models]
-    
+
     async def get_latest_by_user_id(self, user_id: str) -> Optional[LegalConversation]:
         """
         Получить последний диалог пользователя
-        
+
         Args:
             user_id: ID пользователя
-            
+
         Returns:
             LegalConversation | None: Последний диалог или None
         """
@@ -328,23 +327,21 @@ class ConversationRepository:
         )
         result = await self.session.execute(stmt)
         conversation_model = result.scalar_one_or_none()
-        
+
         if conversation_model:
             return conversation_model.to_entity()
         return None
-    
+
     async def add_message(
-        self, 
-        conversation_id: int, 
-        message: LegalQuery | LegalAnswer
+        self, conversation_id: int, message: LegalQuery | LegalAnswer
     ) -> LegalConversation:
         """
         Добавить сообщение в диалог
-        
+
         Args:
             conversation_id: ID диалога
             message: Сообщение (запрос или ответ)
-            
+
         Returns:
             LegalConversation: Обновлённый диалог
         """
@@ -355,20 +352,20 @@ class ConversationRepository:
             message_model = MessageModel.from_answer(message, conversation_id)
         else:
             raise ValueError(f"Неподдерживаемый тип сообщения: {type(message)}")
-        
+
         self.session.add(message_model)
         await self.session.commit()
-        
+
         # Возвращаем обновлённый диалог
         return await self.get_by_id(conversation_id)
-    
+
     async def update(self, conversation: LegalConversation) -> LegalConversation:
         """
         Обновить диалог
-        
+
         Args:
             conversation: Обновлённый диалог
-            
+
         Returns:
             LegalConversation: Обновлённый диалог
         """
@@ -382,53 +379,53 @@ class ConversationRepository:
                 updated_at=conversation.updated_at,
             )
         )
-        
+
         await self.session.execute(stmt)
         await self.session.commit()
-        
+
         # Возвращаем обновлённый диалог
         updated = await self.get_by_id(conversation.id)
         return updated if updated else conversation
-    
+
     async def delete(self, conversation_id: int) -> bool:
         """
         Удалить диалог (каскадно удалит все сообщения)
-        
+
         Args:
             conversation_id: ID диалога
-            
+
         Returns:
             bool: True, если диалог удалён
         """
         stmt = delete(ConversationModel).where(ConversationModel.id == conversation_id)
         result = await self.session.execute(stmt)
         await self.session.commit()
-        
+
         return result.rowcount > 0
-    
+
     async def delete_by_user_id(self, user_id: str) -> int:
         """
         Удалить все диалоги пользователя
-        
+
         Args:
             user_id: ID пользователя
-            
+
         Returns:
             int: Количество удалённых диалогов
         """
         stmt = delete(ConversationModel).where(ConversationModel.user_id == user_id)
         result = await self.session.execute(stmt)
         await self.session.commit()
-        
+
         return result.rowcount
-    
+
     async def count_by_user_id(self, user_id: str) -> int:
         """
         Получить количество диалогов пользователя
-        
+
         Args:
             user_id: ID пользователя
-            
+
         Returns:
             int: Количество диалогов
         """

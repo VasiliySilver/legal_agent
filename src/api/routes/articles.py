@@ -2,7 +2,6 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional
 from src.api.dependencies import (
     get_db_session,
     get_search_articles_use_case,
@@ -13,7 +12,10 @@ from src.api.schemas import (
     ArticleResponse,
     SearchStrategyEnum,
 )
-from src.application.use_cases.search_articles import SearchArticlesUseCase, SearchStrategy
+from src.application.use_cases.search_articles import (
+    SearchArticlesUseCase,
+    SearchStrategy,
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -31,8 +33,7 @@ router = APIRouter(prefix="/articles", tags=["articles"])
 async def search_articles(
     query: str = Query(..., description="Поисковый запрос"),
     strategy: SearchStrategyEnum = Query(
-        SearchStrategyEnum.SEMANTIC,
-        description="Стратегия поиска"
+        SearchStrategyEnum.SEMANTIC, description="Стратегия поиска"
     ),
     limit: int = Query(5, ge=1, le=50, description="Количество результатов"),
     session: AsyncSession = Depends(get_db_session),
@@ -40,38 +41,40 @@ async def search_articles(
 ) -> SearchArticlesResponse:
     """
     Поиск статей ТК РФ.
-    
+
     Args:
         query: Поисковый запрос
         strategy: Стратегия поиска (by_number, fulltext, semantic)
         limit: Количество результатов
         session: Сессия БД
         search_uc: Use case для поиска статей
-    
+
     Returns:
         SearchArticlesResponse: Найденные статьи
     """
     try:
-        logger.info(f"Поиск статей: query='{query}', strategy={strategy}, limit={limit}")
-        
+        logger.info(
+            f"Поиск статей: query='{query}', strategy={strategy}, limit={limit}"
+        )
+
         # Конвертируем enum в SearchStrategy
         strategy_map = {
             SearchStrategyEnum.BY_NUMBER: SearchStrategy.BY_NUMBER,
             SearchStrategyEnum.FULLTEXT: SearchStrategy.FULLTEXT,
             SearchStrategyEnum.SEMANTIC: SearchStrategy.SEMANTIC,
         }
-        
+
         search_strategy = strategy_map[strategy]
-        
+
         # Выполняем поиск
         articles = await search_uc.search(
             query=query,
             strategy=search_strategy,
             limit=limit,
         )
-        
+
         logger.info(f"Найдено статей: {len(articles)}")
-        
+
         return SearchArticlesResponse(
             articles=[
                 ArticleResponse(
@@ -85,7 +88,7 @@ async def search_articles(
             total=len(articles),
             strategy=strategy.value,
         )
-    
+
     except ValueError as e:
         logger.error(f"Ошибка валидации: {e}")
         raise HTTPException(
@@ -114,39 +117,39 @@ async def get_article_by_number(
 ) -> ArticleResponse:
     """
     Получить статью по номеру.
-    
+
     Args:
         article_number: Номер статьи (например, '80')
         session: Сессия БД
         search_uc: Use case для поиска статей
-    
+
     Returns:
         ArticleResponse: Статья ТК РФ
-    
+
     Raises:
         HTTPException: Если статья не найдена
     """
     try:
         logger.info(f"Запрос статьи по номеру: {article_number}")
-        
+
         # Ищем по номеру
         article = await search_uc.search_by_number(article_number)
-        
+
         if not article:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Статья {article_number} не найдена",
             )
-        
+
         logger.info(f"Статья найдена: {article.number}")
-        
+
         return ArticleResponse(
             number=article.number,
             title=article.title,
             content=article.content,
             chapter=article.chapter,
         )
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -171,36 +174,38 @@ async def search_articles_post(
 ) -> SearchArticlesResponse:
     """
     Поиск статей через POST запрос.
-    
+
     Args:
         request: Параметры поиска
         session: Сессия БД
         search_uc: Use case для поиска статей
-    
+
     Returns:
         SearchArticlesResponse: Найденные статьи
     """
     try:
-        logger.info(f"POST поиск статей: query='{request.query}', strategy={request.strategy}")
-        
+        logger.info(
+            f"POST поиск статей: query='{request.query}', strategy={request.strategy}"
+        )
+
         # Конвертируем enum в SearchStrategy
         strategy_map = {
             SearchStrategyEnum.BY_NUMBER: SearchStrategy.BY_NUMBER,
             SearchStrategyEnum.FULLTEXT: SearchStrategy.FULLTEXT,
             SearchStrategyEnum.SEMANTIC: SearchStrategy.SEMANTIC,
         }
-        
+
         search_strategy = strategy_map[request.strategy]
-        
+
         # Выполняем поиск
         articles = await search_uc.search(
             query=request.query,
             strategy=search_strategy,
             limit=request.limit,
         )
-        
+
         logger.info(f"Найдено статей: {len(articles)}")
-        
+
         return SearchArticlesResponse(
             articles=[
                 ArticleResponse(
@@ -214,7 +219,7 @@ async def search_articles_post(
             total=len(articles),
             strategy=request.strategy.value,
         )
-    
+
     except ValueError as e:
         logger.error(f"Ошибка валидации: {e}")
         raise HTTPException(

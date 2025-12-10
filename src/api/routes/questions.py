@@ -15,7 +15,9 @@ from src.api.schemas import (
     ArticleResponse,
     AnswerMetadataResponse,
 )
-from src.application.use_cases.conversation_orchestrator import ConversationOrchestratorUseCase
+from src.application.use_cases.conversation_orchestrator import (
+    ConversationOrchestratorUseCase,
+)
 from src.application.use_cases.quick_answer import QuickAnswerUseCase
 from src.domain.entities import LegalQuery
 import logging
@@ -35,37 +37,41 @@ router = APIRouter(prefix="/questions", tags=["questions"])
 async def ask_question(
     request: QuestionRequest,
     session: AsyncSession = Depends(get_db_session),
-    orchestrator: ConversationOrchestratorUseCase = Depends(get_conversation_orchestrator_use_case),
+    orchestrator: ConversationOrchestratorUseCase = Depends(
+        get_conversation_orchestrator_use_case
+    ),
 ) -> LegalAnswerResponse:
     """
     Задать юридический вопрос с сохранением истории.
-    
+
     Args:
         request: Запрос с вопросом и данными пользователя
         session: Сессия БД
         orchestrator: Use case для обработки вопроса
-    
+
     Returns:
         LegalAnswerResponse: Ответ на вопрос с метаданными
-    
+
     Raises:
         HTTPException: При ошибке обработки вопроса
     """
     try:
         logger.info(f"Получен вопрос от пользователя {request.user_id}")
-        
+
         # Создаём доменную сущность запроса
         query = LegalQuery(
             question=request.question,
             user_id=request.user_id,
             conversation_id=request.conversation_id,
         )
-        
+
         # Обрабатываем вопрос через orchestrator
         answer = await orchestrator.handle_question(query)
-        
-        logger.info(f"Ответ сгенерирован для пользователя {request.user_id}, conversation_id={answer.conversation_id}")
-        
+
+        logger.info(
+            f"Ответ сгенерирован для пользователя {request.user_id}, conversation_id={answer.conversation_id}"
+        )
+
         # Конвертируем в API response
         return LegalAnswerResponse(
             answer=answer.answer,
@@ -85,9 +91,11 @@ async def ask_question(
                 article_numbers=answer.article_numbers,
                 search_strategy="combined",
             ),
-            conversation_id=str(answer.conversation_id) if answer.conversation_id else None,
+            conversation_id=str(answer.conversation_id)
+            if answer.conversation_id
+            else None,
         )
-    
+
     except Exception as e:
         logger.error(f"Ошибка обработки вопроса: {e}", exc_info=True)
         raise HTTPException(
@@ -110,32 +118,32 @@ async def ask_quick_question(
 ) -> QuickAnswerResponse:
     """
     Быстрый ответ на вопрос без сохранения истории.
-    
+
     Args:
         request: Запрос с вопросом
         session: Сессия БД
         quick_answer_uc: Use case для быстрого ответа
-    
+
     Returns:
         QuickAnswerResponse: Ответ на вопрос с метаданными
-    
+
     Raises:
         HTTPException: При ошибке обработки вопроса
     """
     try:
         logger.info(f"Получен быстрый вопрос: {request.question[:50]}...")
-        
+
         # Создаём доменную сущность запроса
         query = LegalQuery(
             question=request.question,
             user_id="anonymous",  # Для быстрых ответов нет user_id
         )
-        
+
         # Получаем быстрый ответ
         answer = await quick_answer_uc.execute(query)
-        
+
         logger.info(f"Быстрый ответ сгенерирован, статей: {len(answer.context)}")
-        
+
         # Конвертируем в API response
         return QuickAnswerResponse(
             answer=answer.answer,
@@ -156,7 +164,7 @@ async def ask_quick_question(
                 search_strategy="semantic",
             ),
         )
-    
+
     except Exception as e:
         logger.error(f"Ошибка обработки быстрого вопроса: {e}", exc_info=True)
         raise HTTPException(

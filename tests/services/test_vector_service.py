@@ -4,7 +4,7 @@
 Тестируем создание эмбеддингов и семантический поиск статей.
 """
 
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import numpy as np
@@ -46,7 +46,9 @@ class TestVectorService:
     async def test_create_embeddings(self, sample_articles):
         """Тест: создание эмбеддингов для статей."""
         # Arrange
-        with patch("src.application.services.vector_service.SentenceTransformer") as mock_model:
+        with patch(
+            "src.application.services.vector_service.SentenceTransformer"
+        ) as mock_model:
             # paraphrase-multilingual-MiniLM-L12-v2 создаёт 384-мерные эмбеддинги
             mock_embeddings = np.random.rand(2, 384).astype(np.float32)
             mock_model.return_value.encode = Mock(return_value=mock_embeddings)
@@ -65,7 +67,7 @@ class TestVectorService:
         """Тест: построение FAISS индекса."""
         # Arrange
         embedding_dim = 384
-        
+
         with patch("sentence_transformers.SentenceTransformer") as mock_model:
             mock_embeddings = np.random.rand(2, embedding_dim).astype(np.float32)
             mock_model.return_value.encode = Mock(return_value=mock_embeddings)
@@ -174,7 +176,9 @@ class TestVectorService:
         index_path = str(tmp_path / "test_index")
         embedding_dim = 384
 
-        with patch("src.application.services.vector_service.SentenceTransformer") as mock_model:
+        with patch(
+            "src.application.services.vector_service.SentenceTransformer"
+        ) as mock_model:
             mock_embeddings = np.random.rand(2, embedding_dim).astype(np.float32)
             mock_model.return_value.encode = Mock(return_value=mock_embeddings)
 
@@ -390,9 +394,7 @@ class TestVectorServiceIntegration:
                 await service.build_index(sample_articles)
 
                 # 2. Первый поиск
-                results1 = await service.find_similar(
-                    "расторжение договора", top_k=1
-                )
+                results1 = await service.find_similar("расторжение договора", top_k=1)
 
                 # 3. Второй поиск
                 results2 = await service.find_similar("отпуск", top_k=1)

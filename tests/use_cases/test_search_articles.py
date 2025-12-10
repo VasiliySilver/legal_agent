@@ -221,9 +221,7 @@ class TestSearchArticlesUseCase:
         )
 
         # Act
-        articles = await use_case.semantic_search(
-            "отпуск", top_k=5, threshold=0.7
-        )
+        await use_case.semantic_search("отпуск", top_k=5, threshold=0.7)
 
         # Assert
         call_args = mock_vector_service.find_similar.call_args
@@ -270,9 +268,7 @@ class TestSearchArticlesUseCase:
         use_case = SearchArticlesUseCase(mock_article_repository)
 
         # Act
-        articles = await use_case.search(
-            "80", strategy=SearchStrategy.BY_NUMBER
-        )
+        articles = await use_case.search("80", strategy=SearchStrategy.BY_NUMBER)
 
         # Assert
         assert len(articles) == 1
@@ -291,9 +287,7 @@ class TestSearchArticlesUseCase:
         use_case = SearchArticlesUseCase(mock_article_repository)
 
         # Act
-        articles = await use_case.search(
-            "отпуск", strategy=SearchStrategy.FULLTEXT
-        )
+        articles = await use_case.search("отпуск", strategy=SearchStrategy.FULLTEXT)
 
         # Assert
         mock_article_repository.search.assert_called_once()
@@ -315,9 +309,7 @@ class TestSearchArticlesUseCase:
         )
 
         # Act
-        articles = await use_case.search(
-            "уволиться", strategy=SearchStrategy.SEMANTIC
-        )
+        articles = await use_case.search("уволиться", strategy=SearchStrategy.SEMANTIC)
 
         # Assert
         mock_vector_service.find_similar.assert_called_once()
@@ -336,9 +328,7 @@ class TestSearchArticlesUseCase:
         use_case = SearchArticlesUseCase(mock_article_repository)
 
         # Act (семантический поиск недоступен, должен быть откат)
-        articles = await use_case.search(
-            "отпуск", strategy=SearchStrategy.SEMANTIC
-        )
+        articles = await use_case.search("отпуск", strategy=SearchStrategy.SEMANTIC)
 
         # Assert
         mock_article_repository.search.assert_called_once()
@@ -360,15 +350,11 @@ class TestSearchArticlesUseCase:
         articles = await use_case.get_all_articles()
 
         # Assert
-        mock_article_repository.get_all.assert_called_once_with(
-            limit=100, offset=0
-        )
+        mock_article_repository.get_all.assert_called_once_with(limit=100, offset=0)
         assert len(articles) == 3
 
     @pytest.mark.asyncio
-    async def test_get_all_articles_with_pagination(
-        self, mock_article_repository
-    ):
+    async def test_get_all_articles_with_pagination(self, mock_article_repository):
         """Тест: получение статей с пагинацией."""
         # Arrange
         mock_article_repository.get_all.return_value = []
@@ -403,9 +389,7 @@ class TestSearchArticlesUseCase:
         articles = await use_case.get_articles_by_chapter(chapter)
 
         # Assert
-        mock_article_repository.search.assert_called_once_with(
-            query=chapter, limit=50
-        )
+        mock_article_repository.search.assert_called_once_with(query=chapter, limit=50)
         assert len(articles) == 2
 
     @pytest.mark.asyncio
@@ -518,9 +502,7 @@ class TestArticleExplorerUseCase:
         assert all(77 <= n <= 83 for n in numbers)
 
     @pytest.mark.asyncio
-    async def test_get_related_articles_invalid_number(
-        self, mock_article_repository
-    ):
+    async def test_get_related_articles_invalid_number(self, mock_article_repository):
         """Тест: получение близких статей с некорректным номером."""
         # Arrange
         use_case = ArticleExplorerUseCase(mock_article_repository)

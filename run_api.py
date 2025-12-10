@@ -40,7 +40,7 @@ def run_api(host="0.0.0.0", port=8000, reload=True):
     print(f"📚 Документация: http://{host}:{port}/docs")
     print(f"🏥 Health check: http://{host}:{port}/health")
     print()
-    
+
     cmd = [
         "uvicorn",
         "src.api.main:app",
@@ -48,10 +48,10 @@ def run_api(host="0.0.0.0", port=8000, reload=True):
         f"--port={port}",
         "--log-level=info",
     ]
-    
+
     if reload:
         cmd.append("--reload")
-    
+
     try:
         subprocess.run(cmd)
     except KeyboardInterrupt:
@@ -63,15 +63,15 @@ def main():
     # Проверяем .env
     if not check_env_file():
         sys.exit(1)
-    
+
     # Проверяем БД
     print("🔍 Проверка подключения к БД...")
     if not check_database():
         print("\n❌ БД недоступна. Исправьте проблему и попробуйте снова.")
         sys.exit(1)
-    
+
     print("✅ БД доступна\n")
-    
+
     # Запускаем API
     run_api()
 

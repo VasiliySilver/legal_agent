@@ -16,7 +16,7 @@ from src.infrastructure.repositories import ArticleRepository, ConversationRepos
 class AnswerLegalQuestionUseCase:
     """
     Use Case для ответа на юридические вопросы пользователей.
-    
+
     Алгоритм:
     1. Получить вопрос пользователя (LegalQuery)
     2. Найти релевантные статьи:
@@ -88,9 +88,7 @@ class AnswerLegalQuestionUseCase:
 
         return answer
 
-    async def _find_relevant_articles(
-        self, question: str, top_k: int
-    ) -> list[Article]:
+    async def _find_relevant_articles(self, question: str, top_k: int) -> list[Article]:
         """
         Найти релевантные статьи для вопроса.
 
@@ -142,14 +140,10 @@ class AnswerLegalQuestionUseCase:
             return None
 
         try:
-            conversation = await self.conversation_repository.get_by_id(
-                conversation_id
-            )
+            conversation = await self.conversation_repository.get_by_id(conversation_id)
             if conversation:
                 return conversation.messages
         except Exception as e:
             print(f"Ошибка получения истории диалога: {e}")
 
         return None
-
-
