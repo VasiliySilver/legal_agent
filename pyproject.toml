@@ -5,6 +5,8 @@ description = "A short description of my project."
 authors = [{ name = "Your Name", email = "your.email@example.com" }]
 requires-python = ">=3.12" # <-- ИСПРАВЛЕНО: используем ~ вместо ~
 dependencies = [
+    "aiogram>=3.23.0",
+    "aiohttp>=3.13.2",
     "asyncpg>=0.30.0",
     "beautifulsoup4>=4.14.2",
     "email-validator>=2.3.0",
@@ -25,6 +27,7 @@ dependencies = [
     "pproxy>=2.7.9",
     "proxy-py>=2.4.10",
     "pydantic>=2.0.0",
+    "pydantic-settings>=2.12.0",
     "pysocks>=1.7.1",
     "python-dotenv>=1.2.1",
     "sentence-transformers>=5.1.2",
