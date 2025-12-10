@@ -17,11 +17,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-legal_agent}
       
       # Настройки локали для русского языка
-      LANG: ru_RU.UTF-8
-      LC_ALL: ru_RU.UTF-8
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
       
       # Настройки производительности
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=ru_RU.UTF-8"
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
     
     ports:
       # Проброс порта на хост
@@ -54,9 +54,9 @@ services:
       POSTGRES_PASSWORD: ${VECTOR_DB_PASSWORD:-postgres}
       POSTGRES_DB: ${VECTOR_DB_NAME:-legal_agent_vectors}
       
-      LANG: ru_RU.UTF-8
-      LC_ALL: ru_RU.UTF-8
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=ru_RU.UTF-8"
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
     
     ports:
       # Отдельный порт для векторной БД
