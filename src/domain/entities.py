@@ -14,13 +14,35 @@ class MessageRole(str, Enum):
     SYSTEM = "system"
 
 
+class ArticleStatus(str, Enum):
+    """Статус статьи"""
+    ACTIVE = "active"  # Действующая
+    ABOLISHED = "abolished"  # Утратила силу
+    SUSPENDED = "suspended"  # Приостановлена
+
+
 class Article(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
     id: Optional[UUID] = Field(default_factory=uuid4)
     number: str = Field(min_length=1)
     title: str
     content: str = Field(min_length=1)
-    chapter: str = ""
+    
+    # Иерархическая структура ТК РФ
+    part: Optional[str] = None  # Часть (например, "Часть I")
+    section: Optional[str] = None  # Раздел (например, "Раздел I. Общие положения")
+    chapter: str = ""  # Глава (например, "Глава 1. Основные начала трудового законодательства")
+    
+    # Характеристики статьи
+    text_length: int = 0  # Длина текста в символах
+    status: ArticleStatus = ArticleStatus.ACTIVE  # Статус статьи
+    
+    # Метаинформация источника
+    source: Optional[str] = None  # Название источника (например, "ConsultantPlus")
+    source_url: Optional[str] = None  # URL статьи на источнике
+    fetched_at: Optional[datetime] = None  # Дата/время загрузки данных
+    
+    # Временные метки
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
 
@@ -45,10 +67,13 @@ class LegalQuery(BaseModel):
 class LegalAnswer(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
     answer: str = Field(min_length=1)
-    sources: List[int] = Field(default_factory=list)  # Номера статей
+    context: List[Article] = Field(default_factory=list)  # Статьи, использованные для ответа
+    sources: List[int] = Field(default_factory=list)  # Номера статей (для обратной совместимости)
+    article_numbers: List[str] = Field(default_factory=list)  # Номера статей как строки
     confidence: float = Field(ge=0.0, le=1.0)
     timestamp: datetime = Field(default_factory=datetime.now)
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    conversation_id: Optional[int | UUID] = None  # ID диалога (если есть)
     
     # Сохраняем старое поле text для совместимости
     @property
@@ -76,6 +101,7 @@ class LegalConversation(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     id: Optional[int | UUID] = Field(default_factory=uuid4)  # int из БД или UUID в памяти
     user_id: str
+    title: Optional[str] = None
     messages: List[Message] = Field(default_factory=list)
     started_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)

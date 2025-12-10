@@ -32,12 +32,13 @@ class ManageConversationUseCase:
         """
         self.repository = conversation_repository
 
-    async def create_conversation(self, user_id: str) -> LegalConversation:
+    async def create_conversation(self, user_id: str, title: Optional[str] = None) -> LegalConversation:
         """
         Создать новый диалог для пользователя.
 
         Args:
             user_id: ID пользователя
+            title: Название диалога (опционально)
 
         Returns:
             LegalConversation: Созданный диалог
@@ -52,6 +53,7 @@ class ManageConversationUseCase:
         conversation = LegalConversation(
             id=uuid4(),
             user_id=user_id.strip(),
+            title=title,
             started_at=datetime.now(),
             messages=[],
         )
@@ -217,6 +219,37 @@ class ManageConversationUseCase:
             True, если диалог удалён
         """
         return await self.repository.delete(conversation_id)
+
+    async def update_conversation(self, conversation_id: int, title: Optional[str] = None) -> Optional[LegalConversation]:
+        """
+        Обновить диалог.
+
+        Args:
+            conversation_id: ID диалога
+            title: Новое название (опционально)
+
+        Returns:
+            LegalConversation: Обновлённый диалог или None, если не найден
+
+        Raises:
+            ValueError: Если диалог не найден
+        """
+        # Получаем существующий диалог
+        conversation = await self.repository.get_by_id(conversation_id)
+        
+        if not conversation:
+            raise ValueError(f"Диалог {conversation_id} не найден")
+        
+        # Обновляем поля
+        if title is not None:
+            conversation.title = title
+        
+        conversation.updated_at = datetime.now()
+        
+        # Сохраняем изменения
+        updated_conversation = await self.repository.update(conversation)
+        
+        return updated_conversation
 
     async def get_conversation_count(self, user_id: str) -> int:
         """
