@@ -1,0 +1,67 @@
+exclude: ^alembic/
+
+repos:
+  # 1. Базовые проверки
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-merge-conflict
+      - id: debug-statements
+
+  # 2. RUFF — заменяет всё: от форматирования до сложных проверок
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.10
+    hooks:
+      - id: ruff
+        # Добавляем настройку длины строки, как была в вашем втором конфиге (120)
+        args: [ --fix, --exit-non-zero-on-fix, --line-length=120 ]
+        exclude: |
+          (?x)(
+              tests/|
+              scripts/
+          )
+      - id: ruff-format
+        exclude: |
+          (?x)(
+              tests/|
+              scripts/
+          )
+
+  # 3. SEMGREP — Настраиваем под FastAPI
+  - repo: https://github.com/returntocorp/semgrep
+    rev: 'v1.89.0'
+    hooks:
+      - id: semgrep
+        args: [
+          '--config', 'p/python',
+          '--config', 'p/fastapi',       # Специальные правила для FastAPI
+          '--config', 'p/security-audit',
+          '--config', 'p/secrets',        # Дополнительный слой поиска секретов
+          # '--error'  # Убираем --error, чтобы не fail-ить при findings
+        ]
+
+  # 4. BANDIT — Безопасность
+  - repo: https://github.com/PyCQA/bandit
+    rev: '1.9.2'
+    hooks:
+      - id: bandit
+        # -s B101: часто в FastAPI тестах или валидации нужны assert
+        args: ["-r", "-lll", "-s", "B101"]
+        files: ^.*\.py$
+
+  # 5. DETECT-SECRETS (опционально - требует настройки baseline)
+  # - repo: https://github.com/Yelp/detect-secrets
+  #   rev: v1.5.0
+  #   hooks:
+  #     - id: detect-secrets
+  #       args: ['--baseline', '.secrets.baseline']
+
+  # 6. SAFETY — проверка уязвимых библиотек (теперь отдельно)
+  # Проект safety прекратил поддержку pre-commit hooks
+  # Используйте отдельно: pip install safety && safety check

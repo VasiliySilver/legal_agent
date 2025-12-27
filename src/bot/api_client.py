@@ -84,11 +84,9 @@ class LegalAgentAPIClient:
                     error_text = await response.text()
                     logger.error(f"API error {response.status}: {error_text}")
                     raise Exception(f"API error: {response.status} - {error_text}")
-                
+
                 result = await response.json()
-                logger.info(
-                    f"Получен ответ от API для вопроса: {question[:50]}..."
-                )
+                logger.info(f"Получен ответ от API для вопроса: {question[:50]}...")
                 return result
 
         except ClientError as e:
@@ -130,7 +128,7 @@ class LegalAgentAPIClient:
                     error_text = await response.text()
                     logger.error(f"API error {response.status}: {error_text}")
                     raise Exception(f"API error: {response.status}")
-                
+
                 result = await response.json()
                 logger.info(f"Найдено статей: {len(result.get('articles', []))}")
                 return result
@@ -171,7 +169,7 @@ class LegalAgentAPIClient:
                     error_text = await response.text()
                     logger.error(f"API error {response.status}: {error_text}")
                     raise Exception(f"API error: {response.status}")
-                
+
                 result = await response.json()
                 logger.info(f"Получена история диалога: {conversation_id}")
                 return result
@@ -213,7 +211,7 @@ class LegalAgentAPIClient:
                     error_text = await response.text()
                     logger.error(f"API error {response.status}: {error_text}")
                     raise Exception(f"API error: {response.status}")
-                
+
                 result = await response.json()
                 logger.info(f"Создан новый диалог для пользователя: {user_id}")
                 return result

@@ -26,8 +26,16 @@ uv sync
 
 ### 2. Настройка окружения
 
-Создайте `.env` файл в корне проекта:
+Создайте `.env` файл в корне проекта: `cp .env.example .env`
 
+Docker-specific env settings можно хранить в `docker/.env` и использовать только для compose `cp docker/.env.example .env`.
+
+### 3. Запуск базы данных
+
+```bash
+cd docker
+docker compose up -d
+cd ..
 ```env
 # Groq API для LLM
 GROQ_API_KEY=your_groq_api_key_here
@@ -49,19 +57,67 @@ VECTOR_DB_NAME=legal_agent_vectors
 # Опционально: прокси (если требуется)
 GROQ_PROXY=socks5://127.0.0.1:12334/
 ```
-
-### 3. Запуск базы данных
-
-```bash
-cd docker
-docker compose up -d
-cd ..
-
 # Инициализация схемы БД
 python -m src.infrastructure.database init
 ```
 
-### 4. Запуск API
+### 3.1. Построение векторного индекса для RAG
+
+После загрузки статей в основную БД можно автоматически построить векторный индекс (FAISS или PostgreSQL+pgvector) для использования RAG.
+
+- Переменные окружения:
+  - `VECTOR_BACKEND` — `faiss` или `postgres` (если не задано, индекс не будет строиться)
+  - Для `postgres` используйте `VECTOR_DB_USER`, `VECTOR_DB_PASSWORD`, `VECTOR_DB_HOST`, `VECTOR_DB_PORT`, `VECTOR_DB_NAME` (по умолчанию берутся `POSTGRES_*`)
+  - Для `faiss` можно указать `VECTOR_INDEX_PATH` — путь для сохранения индекса (по умолчанию `data/faiss_index`)
+
+- Пример (FAISS):
+
+```bash
+VECTOR_BACKEND=faiss VECTOR_INDEX_PATH=data/faiss_index python -m src.infrastructure.database load
+```
+
+- Пример (Postgres pgvector):
+
+```bash
+VECTOR_BACKEND=postgres \
+  VECTOR_DB_HOST=localhost VECTOR_DB_PORT=5433 VECTOR_DB_NAME=legal_agent_vectors \
+  python -m src.infrastructure.database load
+```
+
+Загрузка статей через `python -m src.infrastructure.database load` автоматически построит индекс, если `VECTOR_BACKEND` настроен.
+
+
+### 4. Загрузка данных (статей ТК РФ)
+
+**Вариант А: Использование готового JSON файла**
+```bash
+# Загрузить готовые статьи из JSON в базу данных
+python -m src.infrastructure.database load
+
+# Или указать путь к своему файлу
+python -m src.infrastructure.database load /path/to/articles.json
+```
+
+**Вариант Б: Парсинг с сайта ConsultantPlus**
+```bash
+# Установить зависимости для парсера
+pip install playwright httpx beautifulsoup4
+playwright install chromium
+
+# Запустить парсер
+cd scripts/parser
+python main.py
+
+# Результат сохранится в data/tk_rf_articles.json
+# Затем загрузить в БД:
+cd ../..
+python -m src.infrastructure.database load
+```
+
+> 💡 **Примечание**: Парсинг всех ~537 статей занимает около 30-40 минут.
+> Для тестирования можно ограничить количество: `python main.py --limit 10`
+
+### 5. Запуск API
 
 ```bash
 # Простой запуск с проверками
@@ -84,20 +140,25 @@ API будет доступно по адресу: http://localhost:8000
 - [Quick Start](QUICKSTART_API.md) - быстрый старт
 - [Docker Setup](docker/README.md) - настройка БД
 - [pgvector Setup](docker/PGVECTOR_SETUP.md) - векторный поиск
+- [Parser README](scripts/parser/README.md) - парсер статей ТК РФ
 
 ## 🏗️ Архитектура
 
 Проект следует **Clean Architecture** (DDD):
 
 ```
-src/
-├── domain/              # Бизнес-логика (entities)
-│   └── entities/       # Article, Conversation, Message
+legal_agent/
+├── data/                    # Данные проекта
+│   └── tk_rf_articles.json # Статьи ТК РФ (537 статей)
 │
-├── application/         # Use cases и сервисы
-│   ├── services/       # LLM, Vector, Embedding services
-│   └── use_cases/      # Бизнес-логика приложения
-│
+├── src/                    # Исходный код
+│   ├── domain/            # Бизнес-логика (entities)
+│   │   └── entities/     # Article, Conversation, Message
+│   │
+│   ├── application/       # Use cases и сервисы
+│   │   ├── services/     # LLM, Vector, Embedding services
+│   │   └── use_cases/    # Бизнес-логика приложения
+│   │
 ├── infrastructure/      # Внешние зависимости
 │   ├── database.py     # Подключение к БД
 │   ├── models.py       # SQLAlchemy модели
@@ -184,12 +245,40 @@ pytest -v -s tests/
 ### Основная БД (legal_agent)
 
 - **articles** - статьи Трудового Кодекса РФ
+  - `number` - номер статьи (например, "80", "19.1")
+  - `title` - полное название статьи
+  - `content` - текст статьи
+  - `part`, `section`, `chapter` - иерархия в кодексе
+  - `status` - статус статьи (ACTIVE, ABOLISHED, SUSPENDED)
+  - `source`, `source_url` - источник данных
+  - `fetched_at` - дата получения данных
+
 - **conversations** - диалоги пользователей
 - **messages** - сообщения в диалогах
 
 ### Векторная БД (legal_agent_vectors)
 
 - **article_vectors** - векторные эмбеддинги статей для семантического поиска
+
+### CLI управление БД
+
+```bash
+# Создать таблицы
+python -m src.infrastructure.database init
+
+# Удалить все таблицы (⚠️ осторожно!)
+python -m src.infrastructure.database drop
+
+# Пересоздать БД (drop + init)
+python -m src.infrastructure.database reset
+
+# Проверить подключение
+python -m src.infrastructure.database check
+
+# Загрузить статьи из JSON
+python -m src.infrastructure.database load
+python -m src.infrastructure.database load /path/to/custom.json
+```
 
 ## 🛠️ Разработка
 
@@ -300,7 +389,7 @@ GROQ_API_KEY=your_api_key_here
    ```bash
    git checkout develop
    git pull origin develop
-   
+
    # Gitflow с номером issue
    git flow feature start #42
    # или вручную:
@@ -311,11 +400,11 @@ GROQ_API_KEY=your_api_key_here
    ```bash
    # Добавьте изменения
    git add .
-   
+
    # Commitizen интерактивный коммит
    cz commit
    # или: cz c
-   
+
    # Следуйте подсказкам:
    # - Выберите тип: feat, fix, docs, style, refactor, test, chore
    # - Укажите scope (опционально): api, database, parser, etc.
@@ -405,6 +494,12 @@ pip install commitizen
 # Или через uv (рекомендуется)
 uv pip install commitizen
 
+# Установка pre-commit
+pip install pre-commit
+
+# Или через uv (рекомендуется)
+uv pip install pre-commit
+
 # Установка git-flow (опционально)
 # Ubuntu/Debian:
 sudo apt-get install git-flow
@@ -414,6 +509,9 @@ brew install git-flow
 
 # Инициализация git-flow (один раз для проекта)
 git flow init -d
+
+# Установка pre-commit hooks (один раз для проекта)
+pre-commit install
 ```
 
 ### Правила
@@ -422,30 +520,34 @@ git flow init -d
 2. **Обязательно указывайте номер задачи** в формате `#N`
 3. **Feature branches** именуются как `feature/#N`
 4. **Pull Request** только в `develop`
-5. Код должен проходить **линтеры** (ruff, black, mypy)
+5. Код должен проходить **линтеры** (ruff, black, mypy) - автоматически проверяется через pre-commit hooks
 6. Все **тесты** должны быть зелёными
 7. Добавляйте **тесты** для новой функциональности
 8. Обновляйте **документацию** при необходимости
 
 ### Проверка перед коммитом
 
+Проект использует **pre-commit hooks** для автоматической проверки кода перед каждым коммитом. Это включает:
+
+- **Форматирование кода** (ruff-format)
+- **Линтинг и исправление** (ruff с автофиксами)
+- **Проверка безопасности** (bandit, semgrep, detect-secrets)
+- **Проверка уязвимых зависимостей** (safety - запускается отдельно)
+- **Базовые проверки** (trailing-whitespace, end-of-file-fixer, etc.)
+
 ```bash
-# Форматирование
-black src/ tests/
-isort src/ tests/
-
-# Линтинг
-ruff check src/ tests/
-
-# Типы
-mypy src/
-
-# Тесты
-pytest
-
-# Или всё вместе через pre-commit (если настроено)
+# Ручной запуск всех проверок
 pre-commit run --all-files
+
+# Или только на изменённых файлах (автоматически перед коммитом)
+pre-commit run
+
+# Проверка уязвимых зависимостей (safety запускается отдельно)
+pip install safety
+safety check
 ```
+
+Если проверки не проходят, pre-commit автоматически исправит то, что можно исправить, и покажет ошибки для ручного исправления.
 
 ### Пример полного workflow
 

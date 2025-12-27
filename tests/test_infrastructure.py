@@ -16,7 +16,7 @@ from sqlalchemy import select, text
 @pytest_asyncio.fixture(scope="function")
 async def test_db_engine():
     """Создать async тестовую БД в памяти (SQLite)"""
-    from src.infrastructure.database import Base
+    from src.infrastructure.database.base import Base
     # Импортируем модели, чтобы они зарегистрировались в Base.metadata
 
     engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
@@ -67,7 +67,7 @@ async def conversation_repository(test_db_session):
 @pytest.mark.asyncio
 async def test_database_connection():
     """Тест подключения к БД"""
-    from src.infrastructure.database import get_async_engine
+    from src.infrastructure.database.engine import get_async_engine
 
     engine = get_async_engine()
     assert engine is not None

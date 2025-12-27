@@ -7,7 +7,7 @@ from typing import AsyncGenerator
 import os
 
 from src.api.main import app
-from src.infrastructure.database import Base
+from src.infrastructure.database.base import Base
 from src.infrastructure.models import ArticleModel
 from src.domain.entities import Article
 

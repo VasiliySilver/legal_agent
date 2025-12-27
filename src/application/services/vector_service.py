@@ -170,7 +170,7 @@ class PostgresVectorStore(VectorStore):
                     embedding vector({dimension}) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
-                
+
                 CREATE INDEX IF NOT EXISTS {self.table_name}_embedding_idx
                 ON {self.table_name} USING ivfflat (embedding vector_l2_ops)
                 WITH (lists = 100);
@@ -187,20 +187,20 @@ class PostgresVectorStore(VectorStore):
         dimension = vectors.shape[1]
         await self._create_table(dimension)
 
-        # Удаляем старые векторы (если есть)
+        # Удаляем старые векторы и выполняем пакетную вставку для скорости
         async with self.pool.acquire() as conn:
             await conn.execute(f"TRUNCATE TABLE {self.table_name};")
 
-            # Вставляем новые векторы
+            # Подготавливаем параметры для пакетной вставки
+            params = []
             for article, vector in zip(articles, vectors):
-                await conn.execute(
-                    f"""
-                    INSERT INTO {self.table_name} (article_id, embedding)
-                    VALUES ($1, $2)
-                    """,
-                    article.id,
-                    vector.tolist(),
-                )
+                vec_list = vector.tolist()
+                vec_str = "[" + ",".join(str(float(x)) for x in vec_list) + "]"
+                params.append((str(article.id), vec_str))
+
+            if params:
+                stmt = f"INSERT INTO {self.table_name} (article_id, embedding) VALUES ($1::uuid, $2::vector)"
+                await conn.executemany(stmt, params)
 
     async def search(
         self, query_vector: np.ndarray, top_k: int = 5
@@ -209,23 +209,44 @@ class PostgresVectorStore(VectorStore):
         await self._init_pool()
 
         async with self.pool.acquire() as conn:
+            # Ensure we pass a single vector string (pgvector expects e.g. "[0.1,0.2,...]")
+            # `query_vector` may be a 2D array (1, dim) from the encoder, so extract the row.
+            q = query_vector
+            try:
+                import numpy as _np
+
+                q = _np.asarray(query_vector)
+                if q.ndim > 1 and q.shape[0] == 1:
+                    q = q[0]
+            except Exception:
+                # fallback: use as-is
+                q = query_vector
+
+            if hasattr(q, "tolist"):
+                q_list = q.tolist()
+            else:
+                q_list = list(q)
+
+            q_str = "[" + ",".join(str(float(x)) for x in q_list) + "]"
+
             rows = await conn.fetch(
                 f"""
-                SELECT 
-                    id,
+                SELECT
+                    article_id,
                     embedding <-> $1::vector AS distance
                 FROM {self.table_name}
                 ORDER BY distance
                 LIMIT $2
                 """,
-                query_vector.tolist(),
+                q_str,
                 top_k,
             )
 
         distances = [row["distance"] for row in rows]
-        indices = [row["id"] - 1 for row in rows]  # id начинается с 1
+        # Return article_id values (UUID strings) so caller can map to articles
+        article_ids = [str(row["article_id"]) for row in rows]
 
-        return distances, indices
+        return distances, article_ids
 
     async def save(self, path: str) -> None:
         """PostgreSQL хранит данные персистентно, метод не нужен."""
@@ -377,8 +398,23 @@ class VectorService:
 
         # Формируем результаты
         results = []
+
+        # Если backend POSTGRES returns article_id strings, map them to articles
+        if indices and isinstance(indices[0], str):
+            id_map = {str(a.id): a for a in self.articles}
+
+            for aid, distance in zip(indices, distances):
+                if threshold is not None and distance > threshold:
+                    continue
+
+                article = id_map.get(aid)
+                if article is not None:
+                    results.append(article)
+
+            return results
+
+        # Otherwise assume numeric indices (FAISS)
         for idx, distance in zip(indices, distances):
-            # Применяем порог если задан
             if threshold is not None and distance > threshold:
                 continue
 

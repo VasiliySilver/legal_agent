@@ -3,7 +3,6 @@
 """
 
 import pytest
-from pydantic import ValidationError
 
 from src.bot.keyboards.callbacks import (
     ArticleCallback,
@@ -16,7 +15,7 @@ from src.bot.keyboards.callbacks import (
 def test_menu_callback_creation():
     """Тест: создание callback для меню."""
     callback = MenuCallback(action=CallbackAction.HELP)
-    
+
     assert callback.action == CallbackAction.HELP
     assert callback.pack() == "menu:help"
 
@@ -24,7 +23,7 @@ def test_menu_callback_creation():
 def test_menu_callback_unpack():
     """Тест: распаковка callback для меню."""
     callback = MenuCallback.unpack("menu:help")
-    
+
     assert callback.action == CallbackAction.HELP
 
 
@@ -34,7 +33,7 @@ def test_article_callback_creation():
         action=CallbackAction.VIEW,
         article_number="21",
     )
-    
+
     assert callback.action == CallbackAction.VIEW
     assert callback.article_number == "21"
     packed = callback.pack()
@@ -44,7 +43,7 @@ def test_article_callback_creation():
 def test_article_callback_unpack():
     """Тест: распаковка callback для статьи."""
     callback = ArticleCallback.unpack("article:view:21:0")
-    
+
     assert callback.action == CallbackAction.VIEW
     assert callback.article_number == "21"
 
@@ -56,7 +55,7 @@ def test_article_callback_with_page():
         article_number="21",
         page=2,
     )
-    
+
     assert callback.page == 2
     packed = callback.pack()
     assert "article:search:21:2" == packed
@@ -68,7 +67,7 @@ def test_conversation_callback_creation():
         action=CallbackAction.VIEW,
         conversation_id="conv-123",
     )
-    
+
     assert callback.action == CallbackAction.VIEW
     assert callback.conversation_id == "conv-123"
     packed = callback.pack()
@@ -78,7 +77,7 @@ def test_conversation_callback_creation():
 def test_conversation_callback_unpack():
     """Тест: распаковка callback для диалога."""
     callback = ConversationCallback.unpack("conv:view:conv-123")
-    
+
     assert callback.action == CallbackAction.VIEW
     assert callback.conversation_id == "conv-123"
 
@@ -89,7 +88,7 @@ def test_conversation_callback_delete():
         action=CallbackAction.DELETE,
         conversation_id="conv-123",
     )
-    
+
     assert callback.action == CallbackAction.DELETE
     packed = callback.pack()
     assert "delete" in packed
@@ -101,7 +100,7 @@ def test_conversation_callback_new():
         action=CallbackAction.NEW,
         conversation_id="",  # Пустая строка для нового диалога
     )
-    
+
     assert callback.action == CallbackAction.NEW
     assert callback.conversation_id == ""
 
@@ -118,9 +117,9 @@ def test_callback_action_enum_values():
         "next",
         "prev",
     ]
-    
+
     actual_actions = [action.value for action in CallbackAction]
-    
+
     for action in expected_actions:
         assert action in actual_actions
 
@@ -132,7 +131,7 @@ def test_callback_max_length():
         action=CallbackAction.VIEW,
         conversation_id="x" * 30,  # Очень длинный ID
     )
-    
+
     packed = callback.pack()
     assert len(packed.encode("utf-8")) <= 64, "Callback data превышает 64 байта"
 
@@ -155,7 +154,7 @@ def test_article_callback_empty_number():
         action=CallbackAction.VIEW,
         article_number="",
     )
-    
+
     assert callback.article_number == ""
 
 
@@ -165,6 +164,6 @@ def test_callback_separator():
         action=CallbackAction.VIEW,
         article_number="21",
     )
-    
+
     packed = callback.pack()
     assert packed.count(":") >= 2  # Минимум 2 разделителя

@@ -17,7 +17,7 @@ from sqlalchemy import (
     Enum as SQLEnum,
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from src.infrastructure.database import Base
+from src.infrastructure.database.base import Base
 from src.domain.entities import (
     Article,
     LegalQuery,
@@ -44,10 +44,9 @@ class ArticleModel(Base):
     # Первичный ключ
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
-    # Номер статьи (уникальный)
-    number: Mapped[str] = mapped_column(
-        String(10), unique=True, nullable=False, index=True
-    )
+    # Номер статьи
+    # Примечание: уникальность убрана, чтобы позволить хранить подстатьи и версии
+    number: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
 
     # Название статьи
     title: Mapped[str] = mapped_column(String(500), nullable=False)
@@ -108,6 +107,13 @@ class ArticleModel(Base):
         Returns:
             Article: Доменная сущность статьи
         """
+        # Ensure sensible defaults when SQLAlchemy column defaults haven't been applied yet
+        text_length = self.text_length if self.text_length is not None else 0
+        raw_status = self.status if self.status is not None else ArticleStatus.ACTIVE
+        status = (
+            ArticleStatus(raw_status) if isinstance(raw_status, str) else raw_status
+        )
+
         return Article(
             number=self.number,
             title=self.title,
@@ -115,10 +121,8 @@ class ArticleModel(Base):
             part=self.part,
             section=self.section,
             chapter=self.chapter or "",
-            text_length=self.text_length,
-            status=ArticleStatus(self.status)
-            if isinstance(self.status, str)
-            else self.status,
+            text_length=text_length,
+            status=status,
             source=self.source,
             source_url=self.source_url,
             fetched_at=self.fetched_at,

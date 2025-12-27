@@ -173,3 +173,15 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 CONTINUATION_PROMPT.md
+
+# Data files (JSON, checkpoints)
+data/*.json
+data/checkpoints/
+scripts/data/*.json
+scripts/data/checkpoints/
+
+# But keep the directory structure
+!data/.gitkeep
+
+# Other
+data/faiss_index.*

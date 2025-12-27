@@ -41,7 +41,7 @@ def test_bot_config_validates_token_format():
     with patch.dict(os.environ, {"BOT_TOKEN": "invalid_token"}, clear=True):
         with pytest.raises(ValidationError) as exc_info:
             BotConfig()
-        
+
         # Проверяем, что ошибка содержит информацию о неправильном формате токена
         errors = exc_info.value.errors()
         assert len(errors) > 0
@@ -53,7 +53,7 @@ def test_bot_config_requires_bot_token():
     with patch.dict(os.environ, {}, clear=True):
         with pytest.raises(ValidationError) as exc_info:
             BotConfig()
-        
+
         errors = exc_info.value.errors()
         assert any(error["loc"] == ("bot_token",) for error in errors)
 

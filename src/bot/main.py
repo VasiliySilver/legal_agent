@@ -5,14 +5,11 @@
 
 import asyncio
 import logging
-import socket
 import sys
 
 from aiogram import Bot, Dispatcher
-from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiohttp import TCPConnector
 
 from src.bot.api_client import LegalAgentAPIClient
 from src.bot.config import BotConfig
@@ -45,30 +42,30 @@ async def main() -> None:
     # Загружаем конфигурацию
     logger.info("Loading configuration...")
     config = BotConfig()
-    
+
     # Устанавливаем уровень логирования из конфига
     logging.getLogger().setLevel(config.log_level)
-    
+
     # Инициализируем бот с дефолтной сессией
     logger.info("Initializing bot...")
     bot = Bot(
         token=config.bot_token,
         parse_mode=ParseMode.MARKDOWN_V2,
     )
-    
+
     # Инициализируем диспетчер с FSM storage
     dp = Dispatcher(storage=MemoryStorage())
-    
+
     # Инициализируем API клиент
     logger.info(f"Initializing API client (URL: {config.api_base_url})...")
     api_client = LegalAgentAPIClient(config)
-    
+
     # Регистрируем middlewares
     logger.info("Registering middlewares...")
-    
+
     # Middleware логирования (первым - для логирования всех событий)
     dp.update.middleware(LoggingMiddleware())
-    
+
     # Middleware rate limiting
     dp.update.middleware(
         ThrottlingMiddleware(
@@ -76,10 +73,10 @@ async def main() -> None:
             window=config.rate_limit_window,
         )
     )
-    
+
     # Middleware для инъекции API клиента
     dp.update.middleware(ApiClientMiddleware(api_client))
-    
+
     # Регистрируем роутеры (порядок важен!)
     logger.info("Registering routers...")
     dp.include_router(start_router)
@@ -87,7 +84,7 @@ async def main() -> None:
     dp.include_router(articles_router)
     dp.include_router(conversations_router)
     dp.include_router(errors_router)  # Errors router последним
-    
+
     # Проверяем подключение к Telegram
     try:
         logger.info("Testing Telegram API connection...")
@@ -99,7 +96,7 @@ async def main() -> None:
         await api_client.close()
         await bot.session.close()
         sys.exit(1)
-    
+
     # Запускаем бота
     logger.info("Starting bot polling...")
     try:

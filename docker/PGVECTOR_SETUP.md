@@ -126,7 +126,7 @@ docker exec -it legal_agent_postgres_vector psql -U postgres -d legal_agent_vect
 
 Должно вывести:
 ```
- extname | extversion 
+ extname | extversion
 ---------+------------
  vector  | 0.5.1
 ```

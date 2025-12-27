@@ -10,13 +10,14 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.infrastructure.database.close_database import close_database
+
 # Загрузка переменных окружения из .env файла
 load_dotenv()
 
-from src.infrastructure.database import (  # noqa: E402
+from src.infrastructure.database.check_connection import check_connection  # noqa: E402
+from src.infrastructure.database.init_database import (  # noqa: E402
     init_database,
-    close_database,
-    check_connection,
 )
 from src.api.routes import (  # noqa: E402
     questions_router,

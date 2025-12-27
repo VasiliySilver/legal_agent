@@ -45,36 +45,37 @@ class ThrottlingMiddleware(BaseMiddleware):
         """
         # event это сам Update
         update = event
-        
+
         # Извлекаем информацию о пользователе
         user = None
         if update.message:
             user = update.message.from_user
         elif update.callback_query:
             user = update.callback_query.from_user
-        
+
         if not user:
             return await handler(event, data)
-        
+
         user_id = user.id
         current_time = time.time()
-        
+
         # Получаем список запросов пользователя
         user_requests = self.user_requests[user_id]
-        
+
         # Удаляем старые запросы (за пределами окна)
         user_requests[:] = [
-            req_time for req_time in user_requests
+            req_time
+            for req_time in user_requests
             if current_time - req_time < self.window
         ]
-        
+
         # Проверяем лимит
         if len(user_requests) >= self.rate_limit:
             logger.warning(
                 f"User {user_id} exceeded rate limit "
                 f"({len(user_requests)}/{self.rate_limit} in {self.window}s)"
             )
-            
+
             # Отправляем предупреждение пользователю
             if update.message:
                 await update.message.answer(
@@ -86,20 +87,20 @@ class ThrottlingMiddleware(BaseMiddleware):
                     "⚠️ Слишком много запросов. Подожди немного.",
                     show_alert=True,
                 )
-            
+
             # Не вызываем handler
             return None
-        
+
         # Добавляем текущий запрос
         user_requests.append(current_time)
-        
+
         # Вызываем следующий handler
         return await handler(event, data)
-    
+
     def reset_user(self, user_id: int) -> None:
         """
         Сброс счётчика для конкретного пользователя.
-        
+
         Args:
             user_id: ID пользователя
         """

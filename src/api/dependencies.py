@@ -10,7 +10,7 @@ Dependency Injection контейнер для FastAPI.
 from typing import AsyncGenerator
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.infrastructure.database import get_async_session
+from src.infrastructure.database.session import get_async_session
 from src.infrastructure.repositories import ArticleRepository, ConversationRepository
 from src.application.services.llm_service import LLMService
 from src.application.services.vector_service import VectorService

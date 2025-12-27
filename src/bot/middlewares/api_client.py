@@ -41,6 +41,6 @@ class ApiClientMiddleware(BaseMiddleware):
         """
         # Добавляем api_client в data
         data["api_client"] = self.api_client
-        
+
         # Вызываем следующий handler
         return await handler(event, data)
