@@ -103,7 +103,17 @@ class LLMService:
         """
         formatted = []
         for message in history:
-            formatted.append({"role": message.role, "content": message.content})
+            if hasattr(message, "to_message"):
+                # Для LegalQuery и LegalAnswer
+                msg_dict = message.to_message()
+                formatted.append(
+                    {"role": msg_dict["role"], "content": msg_dict["content"]}
+                )
+            elif hasattr(message, "role") and hasattr(message, "content"):
+                # Для Message объектов
+                formatted.append({"role": message.role, "content": message.content})
+            else:
+                raise ValueError(f"Unsupported message type: {type(message)}")
         return formatted
 
     async def generate_answer(
@@ -196,9 +206,11 @@ class LLMService:
         Returns:
             Список номеров статей
         """
-        # Ищем паттерны типа "статья 80", "статье 77", "статьи 80"
+        # Ищем паттерны типа "статья 80", "статье 77", "статьи 80", "ст. 80"
         # Также ловим "статьям 80 и 77" (где 77 идёт после "и")
-        pattern = r"стать[иеюя][мх]?\s+(\d+(?:\s+и\s+\d+)*)"
+        pattern = (
+            r"(?:стать[иеюя][мх]?|ст\.)\s+(\d+(?:\.\d+)?(?:\s+и\s+\d+(?:\.\d+)?)*)"
+        )
         matches = re.findall(pattern, text, re.IGNORECASE)
 
         # Извлекаем все числа из найденных совпадений
@@ -244,7 +256,7 @@ def extract_article_numbers(text: str) -> list[int]:
     Returns:
         Список номеров статей
     """
-    pattern = r"стать[иеюя][мх]?\s+(\d+(?:\s+и\s+\d+)*)"
+    pattern = r"(?:стать[иеюя][мх]?|ст\.)\s+(\d+(?:\.\d+)?(?:\s+и\s+\d+(?:\.\d+)?)*)"
     matches = re.findall(pattern, text, re.IGNORECASE)
 
     # Извлекаем все числа из найденных совпадений

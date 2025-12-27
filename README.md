@@ -24,6 +24,16 @@ cd legal_agent
 uv sync
 ```
 
+> ⚠️ **Важно для Telegram бота**: Отключите IPv6 в системе:
+> ```bash
+> make disable-ipv6
+> ```
+> Или вручную:
+> ```bash
+> sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+> sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+> ```
+
 ### 2. Настройка окружения
 
 Создайте `.env` файл в корне проекта: `cp .env.example .env`
@@ -128,6 +138,22 @@ uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 API будет доступно по адресу: http://localhost:8000
+
+### 6. Запуск Telegram бота
+
+```bash
+# Простой запуск с проверками
+make run-bot
+
+# Или напрямую
+python run_bot.py
+```
+
+Бот будет доступен в Telegram по username @legal_agent_rf_bot
+
+> ⚠️ **Важно**: Перед запуском бота убедитесь, что:
+> - IPv6 отключен: `sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1`
+> - Токен бота настроен в `.env`: `BOT_TOKEN=your_bot_token_from_botfather`
 
 ## 📚 Документация
 

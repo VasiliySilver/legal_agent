@@ -1,9 +1,20 @@
 SHELL := /bin/bash
 
-.PHONY: help db-up db-init db-drop db-reset db-load build-vector-faiss build-vector-postgres run-api test
+.PHONY: help db-up db-init db-drop db-reset db-load build-vector-faiss build-vector-postgres run-api run-bot disable-ipv6 test
 
 help:
-	@echo "Makefile targets: db-up db-init db-drop db-reset db-load build-vector-faiss build-vector-postgres run-api test"
+	@echo "Available targets:"
+	@echo "  db-up                 - Start PostgreSQL database"
+	@echo "  db-init               - Initialize database schema"
+	@echo "  db-drop               - Drop database"
+	@echo "  db-reset              - Reset database (drop + init)"
+	@echo "  db-load               - Load articles into database"
+	@echo "  build-vector-faiss    - Build FAISS vector index"
+	@echo "  build-vector-postgres - Build PostgreSQL vector index"
+	@echo "  run-api               - Start REST API server"
+	@echo "  run-bot               - Start Telegram bot (requires IPv6 disabled)"
+	@echo "  disable-ipv6          - Disable IPv6 for Telegram bot compatibility"
+	@echo "  test                  - Run all tests"
 
 db-up:
 	@cd docker && docker compose up -d && cd -
@@ -30,6 +41,15 @@ build-vector-postgres:
 
 run-api:
 	@python run_api.py
+
+run-bot:
+	@python run_bot.py
+
+disable-ipv6:
+	@echo "Disabling IPv6 for Telegram bot compatibility..."
+	@sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+	@sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+	@echo "IPv6 disabled. You can now run 'make run-bot'"
 
 test:
 	@pytest

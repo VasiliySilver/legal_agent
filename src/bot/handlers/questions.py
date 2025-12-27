@@ -79,6 +79,7 @@ async def process_question(
         # Отправляем вопрос в API
         response = await api_client.ask_question(
             question=question,
+            user_id=str(message.from_user.id),
             conversation_id=conversation_id,
         )
 

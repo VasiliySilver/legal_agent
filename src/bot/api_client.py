@@ -53,6 +53,7 @@ class LegalAgentAPIClient:
     async def ask_question(
         self,
         question: str,
+        user_id: str,
         conversation_id: Optional[str] = None,
     ) -> dict[str, Any]:
         """
@@ -60,6 +61,7 @@ class LegalAgentAPIClient:
 
         Args:
             question: Вопрос пользователя
+            user_id: ID пользователя
             conversation_id: ID диалога для продолжения беседы
 
         Returns:
@@ -70,13 +72,13 @@ class LegalAgentAPIClient:
         """
         await self._ensure_session()
 
-        payload = {"question": question}
+        payload = {"question": question, "user_id": user_id}
         if conversation_id:
             payload["conversation_id"] = conversation_id
 
         try:
             async with self._session.post(
-                f"{self.base_url}/answer",
+                f"{self.base_url}/questions",
                 json=payload,
             ) as response:
                 # Проверяем статус код

@@ -7,10 +7,10 @@ Use Case: Ответ на юридический вопрос.
 
 from typing import Optional
 
-from src.domain.entities import Article, LegalAnswer, LegalQuery, Message
+from src.domain.entities import LegalAnswer, LegalQuery, Message
 from src.application.services.llm_service import LLMService
-from src.application.services.vector_service import VectorService
-from src.infrastructure.repositories import ArticleRepository, ConversationRepository
+from src.application.use_cases.multi_strategy_search import MultiStrategySearchUseCase
+from src.infrastructure.repositories import ConversationRepository
 
 
 class AnswerLegalQuestionUseCase:
@@ -19,9 +19,10 @@ class AnswerLegalQuestionUseCase:
 
     Алгоритм:
     1. Получить вопрос пользователя (LegalQuery)
-    2. Найти релевантные статьи:
-       - Сначала векторный поиск (семантический)
-       - Затем полнотекстовый поиск (если нужно)
+    2. Найти релевантные статьи через MultiStrategySearchUseCase:
+       - Проверка на номер статьи
+       - Семантический поиск (векторная БД)
+       - Fallback на полнотекстовый поиск (PostgreSQL)
     3. Получить историю диалога (если есть conversation_id)
     4. Отправить контекст в LLM для генерации ответа
     5. Вернуть ответ с источниками (LegalAnswer)
@@ -29,23 +30,20 @@ class AnswerLegalQuestionUseCase:
 
     def __init__(
         self,
-        article_repository: ArticleRepository,
+        multi_strategy_search: MultiStrategySearchUseCase,
         llm_service: LLMService,
-        vector_service: Optional[VectorService] = None,
         conversation_repository: Optional[ConversationRepository] = None,
     ):
         """
         Инициализация use case.
 
         Args:
-            article_repository: Репозиторий для работы со статьями
+            multi_strategy_search: Мульти-стратегический поиск статей
             llm_service: Сервис для генерации ответов
-            vector_service: Сервис векторного поиска (опционально)
             conversation_repository: Репозиторий диалогов (опционально)
         """
-        self.article_repository = article_repository
+        self.multi_strategy_search = multi_strategy_search
         self.llm_service = llm_service
-        self.vector_service = vector_service
         self.conversation_repository = conversation_repository
 
     async def execute(
@@ -71,8 +69,10 @@ class AnswerLegalQuestionUseCase:
         if not query.question or not query.question.strip():
             raise ValueError("Вопрос не может быть пустым")
 
-        # Шаг 1: Найти релевантные статьи
-        articles = await self._find_relevant_articles(query.question, top_k)
+        # Шаг 1: Найти релевантные статьи через мульти-стратегический поиск
+        articles = await self.multi_strategy_search.search(
+            query.question, min_results=1, max_results=top_k
+        )
 
         # Шаг 2: Получить историю диалога (если есть)
         history = None
@@ -87,42 +87,6 @@ class AnswerLegalQuestionUseCase:
         )
 
         return answer
-
-    async def _find_relevant_articles(self, question: str, top_k: int) -> list[Article]:
-        """
-        Найти релевантные статьи для вопроса.
-
-        Стратегия поиска:
-        1. Если есть vector_service - используем семантический поиск
-        2. Иначе - используем полнотекстовый поиск в БД
-
-        Args:
-            question: Вопрос пользователя
-            top_k: Количество статей
-
-        Returns:
-            Список релевантных статей
-        """
-        # Попытка семантического поиска
-        if self.vector_service:
-            try:
-                articles = await self.vector_service.find_similar(
-                    query=question,
-                    top_k=top_k,
-                )
-                if articles:
-                    return articles
-            except Exception as e:
-                # Логируем ошибку, но продолжаем с полнотекстовым поиском
-                print(f"Ошибка векторного поиска: {e}")
-
-        # Fallback: полнотекстовый поиск в БД
-        articles = await self.article_repository.search(
-            query=question,
-            limit=top_k,
-        )
-
-        return articles
 
     async def _get_conversation_history(
         self, conversation_id: int

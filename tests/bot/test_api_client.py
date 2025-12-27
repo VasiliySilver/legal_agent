@@ -49,7 +49,7 @@ async def test_ask_question_success(api_client):
         )
         mock_post.return_value.__aenter__.return_value.status = 200
 
-        result = await api_client.ask_question("Какие права у работника?")
+        result = await api_client.ask_question("Какие права у работника?", "user123")
 
         assert result["answer"] == "Согласно статье 21 ТК РФ..."
         assert len(result["articles"]) == 1
@@ -73,6 +73,7 @@ async def test_ask_question_with_conversation_id(api_client):
 
         result = await api_client.ask_question(
             "Расскажи подробнее",
+            "user123",
             conversation_id="conv-123",
         )
 
@@ -91,7 +92,7 @@ async def test_ask_question_api_error(api_client):
         )
 
         with pytest.raises(Exception) as exc_info:
-            await api_client.ask_question("Тест")
+            await api_client.ask_question("Тест", "user123")
 
         # Проверяем что ошибка содержит "API error" или "api error"
         error_message = str(exc_info.value).lower()
@@ -105,7 +106,7 @@ async def test_ask_question_network_error(api_client):
         mock_post.side_effect = ClientError("Network error")
 
         with pytest.raises(Exception) as exc_info:
-            await api_client.ask_question("Тест")
+            await api_client.ask_question("Тест", "user123")
 
         assert "network" in str(exc_info.value).lower()
 

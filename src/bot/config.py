@@ -13,10 +13,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class BotConfig(BaseSettings):
     """Конфигурация Telegram бота."""
 
-    # Do not load a local .env file by default to make behavior deterministic
-    # in test environments; consumers can opt-in to dotenv if needed.
+    # Load environment variables from .env file
     model_config = SettingsConfigDict(
-        env_file=None,
+        env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",

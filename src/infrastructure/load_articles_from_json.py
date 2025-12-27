@@ -90,7 +90,29 @@ async def load_articles_from_json(json_path: str = None, clear_existing: bool = 
     articles = []
     for article_data in articles_data:
         try:
-            articles.append(convert_article_data(article_data, metadata))
+            article = convert_article_data(article_data, metadata)
+            # Проверка длины полей
+            errors = []
+            if article.title and len(article.title) > 500:
+                errors.append(f"title ({len(article.title)})")
+            if article.source_url and len(article.source_url) > 500:
+                errors.append(f"source_url ({len(article.source_url)})")
+            if article.section and len(article.section) > 200:
+                errors.append(f"section ({len(article.section)})")
+            if article.chapter and len(article.chapter) > 200:
+                errors.append(f"chapter ({len(article.chapter)})")
+            if article.source and len(article.source) > 100:
+                errors.append(f"source ({len(article.source)})")
+            if errors:
+                logger.warning(
+                    f"❗️ Превышение лимита: {', '.join(errors)} | number={article.number} | title={article.title[:50]}...\n"
+                    f"  title: {len(article.title)} | {article.title}\n"
+                    f"  source_url: {len(article.source_url) if article.source_url else 0} | {article.source_url}\n"
+                    f"  section: {len(article.section) if article.section else 0} | {article.section}\n"
+                    f"  chapter: {len(article.chapter) if article.chapter else 0} | {article.chapter}\n"
+                    f"  source: {len(article.source) if article.source else 0} | {article.source}\n"
+                )
+            articles.append(article)
         except Exception as e:
             logger.warning(
                 f"⚠️ Ошибка при обработке статьи: {article_data.get('title', 'unknown')}: {e}"

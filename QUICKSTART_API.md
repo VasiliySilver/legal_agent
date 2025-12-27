@@ -17,6 +17,7 @@ POSTGRES_PASSWORD=postgres
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 POSTGRES_DB=legal_agent
+BOT_TOKEN=your_telegram_bot_token_here
 ```
 
 ## 3. Запуск БД
@@ -40,6 +41,18 @@ uvicorn src.api.main:app --reload
 
 API доступно на: http://localhost:8000
 Документация: http://localhost:8000/docs
+
+## 5. Запуск Telegram бота (опционально)
+
+```bash
+# Отключить IPv6 (важно!)
+make disable-ipv6
+
+# Запуск бота
+make run-bot
+```
+
+Бот будет доступен в Telegram по username @legal_agent_rf_bot
 
 ## 5. Тестирование
 

@@ -9,6 +9,11 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-json
+        # exclude editor settings and other JSONC files that are not strict JSON
+        exclude: |
+          (?x)(
+              ^\.vscode/|
+          )
       - id: check-added-large-files
       - id: check-ast
       - id: check-merge-conflict
@@ -24,13 +29,17 @@ repos:
         exclude: |
           (?x)(
               tests/|
-              scripts/
+              scripts/|
+              notebooks/|
+              \.vscode/
           )
       - id: ruff-format
         exclude: |
           (?x)(
               tests/|
-              scripts/
+              scripts/|
+              notebooks/|
+              \.vscode/
           )
 
   # 3. SEMGREP — Настраиваем под FastAPI

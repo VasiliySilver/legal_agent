@@ -81,20 +81,32 @@ def get_vector_service() -> VectorService:
 # === Use Cases ===
 
 
+async def get_multi_strategy_search_use_case(
+    session: AsyncSession = Depends(get_db_session),
+    vector_service: VectorService = Depends(get_vector_service),
+) -> MultiStrategySearchUseCase:
+    """Получить use case для комбинированного поиска."""
+    article_repo = ArticleRepository(session)
+
+    return MultiStrategySearchUseCase(
+        article_repository=article_repo, vector_service=vector_service
+    )
+
+
 async def get_answer_legal_question_use_case(
     session: AsyncSession = Depends(get_db_session),
     llm_service: LLMService = Depends(get_llm_service),
-    vector_service: VectorService = Depends(get_vector_service),
+    multi_strategy_search: MultiStrategySearchUseCase = Depends(
+        get_multi_strategy_search_use_case
+    ),
 ) -> AnswerLegalQuestionUseCase:
     """Получить use case для ответа на юридические вопросы."""
-    article_repo = ArticleRepository(session)
     conversation_repo = ConversationRepository(session)
 
     return AnswerLegalQuestionUseCase(
-        article_repository=article_repo,
+        multi_strategy_search=multi_strategy_search,
         conversation_repository=conversation_repo,
         llm_service=llm_service,
-        vector_service=vector_service,
     )
 
 
@@ -118,25 +130,14 @@ async def get_search_articles_use_case(
 
 
 async def get_conversation_orchestrator_use_case(
-    session: AsyncSession = Depends(get_db_session),
-    llm_service: LLMService = Depends(get_llm_service),
-    vector_service: VectorService = Depends(get_vector_service),
+    answer_use_case: AnswerLegalQuestionUseCase = Depends(
+        get_answer_legal_question_use_case
+    ),
+    manage_use_case: ManageConversationUseCase = Depends(
+        get_manage_conversation_use_case
+    ),
 ) -> ConversationOrchestratorUseCase:
     """Получить orchestrator для полного цикла вопрос-ответ."""
-    article_repo = ArticleRepository(session)
-    conversation_repo = ConversationRepository(session)
-
-    answer_use_case = AnswerLegalQuestionUseCase(
-        article_repository=article_repo,
-        conversation_repository=conversation_repo,
-        llm_service=llm_service,
-        vector_service=vector_service,
-    )
-
-    manage_use_case = ManageConversationUseCase(
-        conversation_repository=conversation_repo
-    )
-
     return ConversationOrchestratorUseCase(
         answer_use_case=answer_use_case, manage_conversation_use_case=manage_use_case
     )
@@ -154,16 +155,4 @@ async def get_quick_answer_use_case(
         article_repository=article_repo,
         llm_service=llm_service,
         vector_service=vector_service,
-    )
-
-
-async def get_multi_strategy_search_use_case(
-    session: AsyncSession = Depends(get_db_session),
-    vector_service: VectorService = Depends(get_vector_service),
-) -> MultiStrategySearchUseCase:
-    """Получить use case для комбинированного поиска."""
-    article_repo = ArticleRepository(session)
-
-    return MultiStrategySearchUseCase(
-        article_repository=article_repo, vector_service=vector_service
     )

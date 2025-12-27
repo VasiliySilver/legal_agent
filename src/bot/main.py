@@ -8,6 +8,7 @@ import logging
 import sys
 
 from aiogram import Bot, Dispatcher
+from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
@@ -46,11 +47,11 @@ async def main() -> None:
     # Устанавливаем уровень логирования из конфига
     logging.getLogger().setLevel(config.log_level)
 
-    # Инициализируем бот с дефолтной сессией
+    # Инициализируем бот
     logger.info("Initializing bot...")
     bot = Bot(
         token=config.bot_token,
-        parse_mode=ParseMode.MARKDOWN_V2,
+        default=DefaultBotProperties(parse_mode=ParseMode.MARKDOWN_V2),
     )
 
     # Инициализируем диспетчер с FSM storage

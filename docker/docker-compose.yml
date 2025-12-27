@@ -1,8 +1,6 @@
 # Docker Compose для юридического агента
 # PostgreSQL база данных
 
-version: '3.8'
-
 services:
   # PostgreSQL для основных данных (статьи, диалоги, пользователи)
   postgres:

@@ -243,6 +243,20 @@ class TestLLMService:
         assert numbers == []
 
     @pytest.mark.asyncio
+    async def test_extract_article_numbers_with_st_abbreviation(self):
+        """Тест: извлечение номеров статей с сокращением 'ст.'."""
+        # Arrange
+        from src.application.services.llm_service import extract_article_numbers
+
+        answer_text = "При увольнении работник имеет ряд прав, закреплённых в Трудовом кодексе РФ. К ним относятся: 1. Получение справки о зарплате и трудовом стаже (ст. 84.1 ТК РФ)"
+
+        # Act
+        numbers = extract_article_numbers(answer_text)
+
+        # Assert
+        assert 84 in numbers  # ст. 84.1 -> 84
+
+    @pytest.mark.asyncio
     async def test_calculate_confidence_high(self, sample_articles):
         """Тест: высокая уверенность при наличии статей."""
         # Arrange

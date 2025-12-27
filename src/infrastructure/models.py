@@ -45,19 +45,21 @@ class ArticleModel(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
     # Номер статьи
-    # Примечание: уникальность убрана, чтобы позволить хранить подстатьи и версии
-    number: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    # Уникальность нужна для upsert операций
+    number: Mapped[str] = mapped_column(
+        String(50), nullable=False, unique=True, index=True
+    )
 
     # Название статьи
-    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    title: Mapped[str] = mapped_column(String(1000), nullable=False)
 
     # Полный текст статьи
     content: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Иерархическая структура ТК РФ
-    part: Mapped[str] = mapped_column(String(100), nullable=True)
-    section: Mapped[str] = mapped_column(String(200), nullable=True)
-    chapter: Mapped[str] = mapped_column(String(200), nullable=True)
+    part: Mapped[str] = mapped_column(String(1000), nullable=True)
+    section: Mapped[str] = mapped_column(String(1000), nullable=True)
+    chapter: Mapped[str] = mapped_column(String(1000), nullable=True)
 
     # Характеристики статьи
     text_length: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -68,8 +70,8 @@ class ArticleModel(Base):
     )
 
     # Метаинформация источника
-    source: Mapped[str] = mapped_column(String(100), nullable=True)
-    source_url: Mapped[str] = mapped_column(String(500), nullable=True)
+    source: Mapped[str] = mapped_column(String(1000), nullable=True)
+    source_url: Mapped[str] = mapped_column(String(1000), nullable=True)
     fetched_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     # Метаданные (для расширения)
